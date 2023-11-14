@@ -26,9 +26,8 @@ func kkyy() {
 		return
 	}
 
-	var deleted bool
 	var prevTime time.Time
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 1000; {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			fmt.Println("Error reading key:", err)
@@ -41,17 +40,9 @@ func kkyy() {
 			break
 		}
 
-		// if key == keyboard.KeyDelete || key == keyboard.KeyBackspace || key == keyboard.KeyBackspace2 {
 		if key == keyboard.KeyBackspace2 {
 			if i == 0 {
 				continue
-			}
-
-			if deleted {
-				if i == 1 {
-					continue
-				}
-				i--
 			}
 
 			i--
@@ -60,11 +51,8 @@ func kkyy() {
 			for j := 0; j < i; j++ {
 				fmt.Printf("%c", recordings[j].Character)
 			}
-			deleted = true
 			continue
 		}
-
-		var kp KeyPress
 
 		if key == keyboard.KeySpace {
 			char = ' '
@@ -72,6 +60,7 @@ func kkyy() {
 
 		// Calculate the time difference
 		currentTime := time.Now()
+		var kp KeyPress
 		if !prevTime.IsZero() {
 			fmt.Printf("%c", char)
 			kp = NewKeyPress(char, currentTime.Sub(prevTime))
@@ -79,13 +68,10 @@ func kkyy() {
 			fmt.Printf("%c", char)
 			kp = NewKeyPress(char, 0)
 		}
-
-		deleted = false
-
-		recordings[i] = kp
-
 		// Update the previous time
 		prevTime = currentTime
+		recordings[i] = kp
+		i++
 	}
 	keyboard.Close()
 }
