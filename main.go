@@ -17,8 +17,8 @@ func main() {
 }
 
 func kkyy() {
-	recordings := make([]KeyPress, 1000)
-	fmt.Println("Press keys (press 'ENTER' to quit): ")
+	sequence := make([]KeyPress, 1000)
+	fmt.Println("Recording character sequence. Please input keys (press 'ENTER' to begin playback): ")
 
 	err := keyboard.Open()
 	if err != nil {
@@ -27,7 +27,8 @@ func kkyy() {
 	}
 
 	var prevTime time.Time
-	for i := 0; i < 1000; {
+	i := 0
+	for i < 1000 {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			fmt.Println("Error reading key:", err)
@@ -35,8 +36,8 @@ func kkyy() {
 		}
 
 		if key == keyboard.KeyEnter {
-			fmt.Println("Playing recording...")
-			playbackRecording(recordings)
+			fmt.Print("\nPlaying recording: ")
+			playbackRecording(sequence, i)
 			break
 		}
 
@@ -46,10 +47,11 @@ func kkyy() {
 			}
 
 			i--
-			fmt.Printf("\u001b[2K\r") // escape sequence clears term row
-			recordings[i] = KeyPress{}
+			// escape code to erase current line and move cursor to beginning.
+			fmt.Printf("\u001b[2K\r")
+			sequence[i] = KeyPress{} // effectively deletes an element
 			for j := 0; j < i; j++ {
-				fmt.Printf("%c", recordings[j].Character)
+				fmt.Printf("%c", sequence[j].Character)
 			}
 			continue
 		}
@@ -58,31 +60,37 @@ func kkyy() {
 			char = ' '
 		}
 
-		// Calculate the time difference
+		fmt.Printf("%c", char)
+
 		currentTime := time.Now()
-		var kp KeyPress
-		if !prevTime.IsZero() {
-			fmt.Printf("%c", char)
-			kp = NewKeyPress(char, currentTime.Sub(prevTime))
-		} else {
-			fmt.Printf("%c", char)
-			kp = NewKeyPress(char, 0)
-		}
-		// Update the previous time
+		kp := NewKeyPress(char, currentTime, prevTime)
+		sequence[i] = kp
 		prevTime = currentTime
-		recordings[i] = kp
 		i++
 	}
 	keyboard.Close()
+
+	debugRecording(sequence, i)
 }
 
-func NewKeyPress(char rune, delay time.Duration) KeyPress {
+func NewKeyPress(char rune, currentTime, prevTime time.Time) KeyPress {
+	var delay time.Duration
+	if !prevTime.IsZero() {
+		delay = currentTime.Sub(prevTime)
+	}
 	return KeyPress{Character: char, Delay: delay}
 }
 
-func playbackRecording(recording []KeyPress) {
-	for _, e := range recording {
-		time.Sleep(e.Delay)
-		fmt.Printf("%c", e.Character)
+func debugRecording(recording []KeyPress, n int) {
+	for i := 0; i < n; i++ {
+		fmt.Printf("%d - %c - %s\n", i, recording[i].Character, recording[i].Delay.String())
 	}
+}
+
+func playbackRecording(recording []KeyPress, n int) {
+	for i := 0; i < n; i++ {
+		time.Sleep(recording[i].Delay)
+		fmt.Printf("%c", recording[i].Character)
+	}
+	fmt.Printf("\n")
 }
