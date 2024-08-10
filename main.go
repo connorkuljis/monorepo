@@ -18,6 +18,8 @@ type loginMode string
 const (
 	Login  loginMode = "LOGIN"
 	Logout loginMode = "LOGOUT"
+
+	logFile = "/tmp/logs.txt"
 )
 
 type card struct {
@@ -36,9 +38,6 @@ func main() {
 	logoutFlag := flag.Bool("out", false, "Logout")
 	flag.Parse()
 
-	log.Printf("login mode=%t", *loginFlag)
-	log.Printf("logout mode=%t", *logoutFlag)
-
 	if *loginFlag {
 		msg := "hello, world"
 		c, err := login(msg)
@@ -46,7 +45,7 @@ func main() {
 			log.Fatal(err)
 		}
 		save(c)
-		fmt.Println("Logged in:", c.String())
+		fmt.Println("OK: LOGIN ->", c.String())
 	}
 
 	if *logoutFlag {
@@ -55,14 +54,12 @@ func main() {
 			log.Fatal(err)
 		}
 		save(c)
-		fmt.Println("Logged out:", c.String())
+		fmt.Println("OK: LOGOUT ->", c.String())
 	}
-
-	fmt.Println("Exiting.")
 }
 
 func getLastCard() (card, error) {
-	cards, err := loadCards()
+	cards, err := loadAllCards()
 	if err != nil {
 		return card{}, err
 	}
@@ -116,7 +113,7 @@ func logout() (card, error) {
 }
 
 func save(card card) {
-	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,8 +122,8 @@ func save(card card) {
 	fmt.Fprintln(file, card.String())
 }
 
-func loadCards() ([]card, error) {
-	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+func loadAllCards() ([]card, error) {
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -27,3 +27,8 @@ Logins
   
 ```
 
+# Ideas for the random work sampler.
+
+- when a user is punched in create a random work sampler
+- eg 10:00 -> 15:00, take 5 random samples.
+
