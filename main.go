@@ -13,122 +13,122 @@ import (
 	"time"
 )
 
-type loginMode string
+type mode string
 
 const (
-	Login  loginMode = "LOGIN"
-	Logout loginMode = "LOGOUT"
-
-	logFile = "/tmp/logs.txt"
+	Login  mode = "LOGIN"
+	Logout mode = "LOGOUT"
+	output      = "/tmp/logs.txt"
 )
 
 type card struct {
 	id          int32
 	timestamp   int64
 	description string
-	loginMode   loginMode
+	mode        mode
 }
 
 func (c *card) String() string {
-	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, c.loginMode)
+	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, c.mode)
+}
+
+func NewCard(description string) card {
+	return card{
+		id:          rand.Int31(),
+		description: description,
+	}
+}
+
+func (c *card) login() error {
+	c.mode = Login
+	c.stamp()
+	return nil
+}
+
+func (c *card) logout() error {
+	c.mode = Logout
+	c.stamp()
+	return nil
+}
+
+func (c *card) stamp() {
+	c.timestamp = time.Now().UnixMilli()
+}
+
+func (c *card) save(file *os.File) {
+	fmt.Fprintln(file, c.String())
+	fmt.Println("Successfully saved card!:", c.String())
 }
 
 func main() {
-	loginFlag := flag.Bool("in", false, "Login")
-	logoutFlag := flag.Bool("out", false, "Logout")
+	in := flag.Bool("in", false, "punch in")
+	out := flag.Bool("out", false, "punch out")
 	flag.Parse()
 
-	if *loginFlag {
-		msg := "hello, world"
-		c, err := login(msg)
-		if err != nil {
-			log.Fatal(err)
-		}
-		save(c)
-		fmt.Println("OK: LOGIN ->", c.String())
+	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var previousCard card
+	previousCard, err = getLastCard(file)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if *logoutFlag {
-		c, err := logout()
+	var currentCard card
+	if *in {
+		if previousCard.mode == Login {
+			log.Fatal(errors.New("Please punch out before punching in."))
+		}
+
+		if len(flag.Args()) < 1 {
+			log.Fatal(errors.New("Please provide a description."))
+		}
+
+		currentCard = NewCard(flag.Args()[0])
+
+		err := currentCard.login()
 		if err != nil {
 			log.Fatal(err)
 		}
-		save(c)
-		fmt.Println("OK: LOGOUT ->", c.String())
+		currentCard.save(file)
+	}
+
+	if *out {
+		if previousCard.mode != Login {
+			log.Fatal(errors.New("Please punch in before punching out."))
+		}
+
+		currentCard = previousCard
+
+		err := currentCard.logout()
+		if err != nil {
+			log.Fatal(err)
+		}
+		currentCard.save(file)
+	}
+
+	if currentCard.mode != "" {
+		log.Println("Current mode:", currentCard.mode)
 	}
 }
 
-func getLastCard() (card, error) {
-	cards, err := loadAllCards()
+func getLastCard(file *os.File) (card, error) {
+	cards, err := loadAllCards(file)
 	if err != nil {
 		return card{}, err
 	}
 
 	if len(cards) == 0 {
-		// return an empty card.
-		// use the default value of loginMode to check if we should login/logout.
 		return card{}, nil
 	}
 
 	return cards[len(cards)-1], nil
 }
 
-func login(desc string) (card, error) {
-	lastCard, err := getLastCard()
-	if err != nil {
-		return card{}, err
-	}
-
-	// in the case of login, if the last card mode is LOGIN, an error is raised.
-	if lastCard.loginMode == Login {
-		return card{}, errors.New("Please logout before loggin in.")
-	}
-
-	time := time.Now().UnixMilli()
-	id := rand.Int31()
-
-	return card{
-		id:          id,
-		timestamp:   time,
-		description: desc,
-		loginMode:   Login,
-	}, nil
-}
-
-func logout() (card, error) {
-	lastCard, err := getLastCard()
-	if err != nil {
-		return card{}, err
-	}
-
-	// in the case of logout, loginMode must be LOGIN, or an error is raised.
-	if lastCard.loginMode != Login {
-		return card{}, errors.New("Please login before logging out.")
-	}
-
-	lastCard.loginMode = Logout
-	lastCard.timestamp = time.Now().UnixMilli()
-
-	return lastCard, nil
-}
-
-func save(card card) {
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	fmt.Fprintln(file, card.String())
-}
-
-func loadAllCards() ([]card, error) {
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
+func loadAllCards(file *os.File) ([]card, error) {
 	scanner := bufio.NewScanner(file)
 	var cards []card
 
@@ -155,7 +155,7 @@ func loadAllCards() ([]card, error) {
 
 		desc := fields[2]
 
-		var mode loginMode
+		var mode mode
 		switch fields[3] {
 		case string(Login):
 			mode = Login
@@ -170,7 +170,7 @@ func loadAllCards() ([]card, error) {
 			id:          int32(id),
 			timestamp:   int64(time),
 			description: desc,
-			loginMode:   mode,
+			mode:        mode,
 		}
 
 		cards = append(cards, card)
