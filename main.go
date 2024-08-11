@@ -1,3 +1,8 @@
+// FILE     : main.go
+// AUTHOR   : conkuljis@gmail.com
+// DATE     : August 2024
+// PURPOSE  : Main program for facilitating a time clock command line utility
+
 package main
 
 import (
@@ -13,6 +18,19 @@ import (
 	"time"
 )
 
+// A card is created once when logging in, and recreated (from the last login card) when logging out.
+// For each
+// One card for the start time
+// One card the end time.
+// / sharing the same card id.
+type card struct {
+	id          int32
+	timestamp   int64
+	description string
+	mode        mode
+}
+
+// Each 'card' is enumerated 0 or 1 to represent the 'mode' of login.
 type mode int
 
 const (
@@ -22,21 +40,14 @@ const (
 
 const output = "/tmp/logs.txt"
 
-type card struct {
-	id          int32
-	timestamp   int64
-	description string
-	mode        mode
-}
-
-type cardStack []card
+type timesheet []card
 
 func main() {
 	in := flag.Bool("in", false, "punch in")
 	out := flag.Bool("out", false, "punch out")
 	flag.Parse()
 
-	cards, err := getCardStack()
+	timesheet, err := getTimesheet()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,12 +55,18 @@ func main() {
 	var currentCard card
 
 	if *in {
+		// initialise currentCard to avoid if-else
 		currentCard = NewCard()
-		if len(cards) > 0 {
-			lastCard := cards[len(cards)-1]
-			if lastCard.mode == Login {
-				log.Fatal(errors.New("Please punch out before punching in."))
-			}
+
+		lastCard, ok := timesheet.Last()
+
+		// note: by convention any empty card will be default initialised to Login (0), so we need to also check the card came from the timesheet.
+		if lastCard.mode == Login && ok {
+			log.Fatal(errors.New("Please punch out before punching in."))
+		}
+
+		// the if-else is avoided here.
+		if ok {
 			currentCard = lastCard
 		}
 
@@ -58,17 +75,17 @@ func main() {
 		}
 
 		currentCard.description = flag.Args()[0]
-
 		currentCard.login()
-		currentCard.save()
+		currentCard.save() // remember to save any time we login or logout.
+		fmt.Println("you are now logged in.")
 	}
 
 	if *out {
-		if len(cards) == 0 {
+		lastCard, ok := timesheet.Last()
+		if !ok {
 			log.Fatal("You have no cards on record.")
 		}
 
-		lastCard := cards[len(cards)-1]
 		if lastCard.mode == Logout {
 			log.Fatal(errors.New("Please punch in before punching out."))
 		}
@@ -77,9 +94,8 @@ func main() {
 
 		currentCard.logout()
 		currentCard.save()
+		fmt.Println("you are now logged out.")
 	}
-
-	log.Println(currentCard.string())
 }
 
 func NewCard() card {
@@ -110,7 +126,6 @@ func (c *card) save() {
 	defer file.Close()
 
 	fmt.Fprintln(file, c.string())
-	fmt.Println("Successfully saved card!\n", c.string())
 }
 
 func (c *card) string() string {
@@ -127,7 +142,20 @@ func (c *card) string() string {
 	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, mode)
 }
 
-func getCardStack() (cardStack, error) {
+func (t *timesheet) IsEmpty() bool {
+	return len(*t) == 0
+}
+
+func (t *timesheet) Last() (card, bool) {
+	if t.IsEmpty() {
+		return card{}, false
+
+	}
+	timesheet := *t
+	return timesheet[len(timesheet)-1], true
+}
+
+func getTimesheet() (timesheet, error) {
 	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -135,7 +163,7 @@ func getCardStack() (cardStack, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var stack cardStack
+	var timesheet timesheet
 	for scanner.Scan() {
 		line := scanner.Text()
 		fields := strings.SplitN(line, "\t", 4)
@@ -176,12 +204,12 @@ func getCardStack() (cardStack, error) {
 			mode:        mode,
 		}
 
-		stack = append(stack, card)
+		timesheet = append(timesheet, card)
 	}
 
 	if err := scanner.Err(); err != nil {
-		return stack, err
+		return timesheet, err
 	}
 
-	return stack, nil
+	return timesheet, nil
 }
