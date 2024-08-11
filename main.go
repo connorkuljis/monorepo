@@ -13,13 +13,14 @@ import (
 	"time"
 )
 
-type mode string
+type mode int
 
 const (
-	Login  mode = "LOGIN"
-	Logout mode = "LOGOUT"
-	output      = "/tmp/logs.txt"
+	Login mode = iota
+	Logout
 )
+
+const output = "/tmp/logs.txt"
 
 type card struct {
 	id          int32
@@ -28,114 +29,116 @@ type card struct {
 	mode        mode
 }
 
-func (c *card) String() string {
-	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, c.mode)
-}
-
-func NewCard(description string) card {
-	return card{
-		id:          rand.Int31(),
-		description: description,
-	}
-}
-
-func (c *card) login() error {
-	c.mode = Login
-	c.stamp()
-	return nil
-}
-
-func (c *card) logout() error {
-	c.mode = Logout
-	c.stamp()
-	return nil
-}
-
-func (c *card) stamp() {
-	c.timestamp = time.Now().UnixMilli()
-}
-
-func (c *card) save(file *os.File) {
-	fmt.Fprintln(file, c.String())
-	fmt.Println("Successfully saved card!:", c.String())
-}
+type cardStack []card
 
 func main() {
 	in := flag.Bool("in", false, "punch in")
 	out := flag.Bool("out", false, "punch out")
 	flag.Parse()
 
-	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	var previousCard card
-	previousCard, err = getLastCard(file)
+	cards, err := getCardStack()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var currentCard card
+
 	if *in {
-		if previousCard.mode == Login {
-			log.Fatal(errors.New("Please punch out before punching in."))
+		currentCard = NewCard()
+		if len(cards) > 0 {
+			lastCard := cards[len(cards)-1]
+			if lastCard.mode == Login {
+				log.Fatal(errors.New("Please punch out before punching in."))
+			}
+			currentCard = lastCard
 		}
 
 		if len(flag.Args()) < 1 {
 			log.Fatal(errors.New("Please provide a description."))
 		}
 
-		currentCard = NewCard(flag.Args()[0])
+		currentCard.description = flag.Args()[0]
 
-		err := currentCard.login()
-		if err != nil {
-			log.Fatal(err)
-		}
-		currentCard.save(file)
+		currentCard.login()
+		currentCard.save()
 	}
 
 	if *out {
-		if previousCard.mode != Login {
+		if len(cards) == 0 {
+			log.Fatal("You have no cards on record.")
+		}
+
+		lastCard := cards[len(cards)-1]
+		if lastCard.mode == Logout {
 			log.Fatal(errors.New("Please punch in before punching out."))
 		}
 
-		currentCard = previousCard
+		currentCard = lastCard
 
-		err := currentCard.logout()
-		if err != nil {
-			log.Fatal(err)
-		}
-		currentCard.save(file)
+		currentCard.logout()
+		currentCard.save()
 	}
 
-	if currentCard.mode != "" {
-		log.Println("Current mode:", currentCard.mode)
+	log.Println(currentCard.string())
+}
+
+func NewCard() card {
+	return card{
+		id: rand.Int31(),
 	}
 }
 
-func getLastCard(file *os.File) (card, error) {
-	cards, err := loadAllCards(file)
+func (c *card) login() {
+	c.mode = Login
+	c.stamp()
+}
+
+func (c *card) logout() {
+	c.mode = Logout
+	c.stamp()
+}
+
+func (c *card) stamp() {
+	c.timestamp = time.Now().UnixMilli()
+}
+
+func (c *card) save() {
+	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
-		return card{}, err
+		log.Fatal(err)
 	}
+	defer file.Close()
 
-	if len(cards) == 0 {
-		return card{}, nil
-	}
-
-	return cards[len(cards)-1], nil
+	fmt.Fprintln(file, c.string())
+	fmt.Println("Successfully saved card!\n", c.string())
 }
 
-func loadAllCards(file *os.File) ([]card, error) {
-	scanner := bufio.NewScanner(file)
-	var cards []card
+func (c *card) string() string {
+	var mode string
 
+	if c.mode == Login {
+		mode = "LOGIN"
+	}
+
+	if c.mode == Logout {
+		mode = "LOGOUT"
+	}
+
+	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, mode)
+}
+
+func getCardStack() (cardStack, error) {
+	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var stack cardStack
 	for scanner.Scan() {
 		line := scanner.Text()
 		fields := strings.SplitN(line, "\t", 4)
-
 		if len(fields) != 4 {
 			log.Printf("Invalid line: %s\n", line)
 			continue
@@ -157,9 +160,9 @@ func loadAllCards(file *os.File) ([]card, error) {
 
 		var mode mode
 		switch fields[3] {
-		case string(Login):
+		case "LOGIN":
 			mode = Login
-		case string(Logout):
+		case "LOGOUT":
 			mode = Logout
 		default:
 			log.Printf("Invalid mode string: %s\n", fields[3])
@@ -173,12 +176,12 @@ func loadAllCards(file *os.File) ([]card, error) {
 			mode:        mode,
 		}
 
-		cards = append(cards, card)
+		stack = append(stack, card)
 	}
 
 	if err := scanner.Err(); err != nil {
-		return cards, err
+		return stack, err
 	}
 
-	return cards, nil
+	return stack, nil
 }
