@@ -59,15 +59,11 @@ func main() {
 		currentCard = NewCard()
 
 		lastCard, ok := timesheet.Last()
-
-		// note: by convention any empty card will be default initialised to Login (0), so we need to also check the card came from the timesheet.
-		if lastCard.mode == Login && ok {
-			log.Fatal(errors.New("Please punch out before punching in."))
-		}
-
-		// the if-else is avoided here.
 		if ok {
 			currentCard = lastCard
+			if currentCard.mode == Login {
+				log.Fatal(errors.New("Please punch out before punching in."))
+			}
 		}
 
 		if len(flag.Args()) < 1 {
