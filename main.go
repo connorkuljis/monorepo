@@ -18,11 +18,8 @@ import (
 	"time"
 )
 
-// A card is created once when logging in, and recreated (from the last login card) when logging out.
-// For each
-// One card for the start time
-// One card the end time.
-// / sharing the same card id.
+// When logging in a new card is created.
+// When logging out, a copy of the login card is used.
 type card struct {
 	id          int32
 	timestamp   int64
@@ -58,12 +55,9 @@ func main() {
 		// initialise currentCard to avoid if-else
 		currentCard = NewCard()
 
-		lastCard, ok := timesheet.Last()
-		if ok {
-			currentCard = lastCard
-			if currentCard.mode == Login {
-				log.Fatal(errors.New("Please punch out before punching in."))
-			}
+		lastCard, ok := timesheet.last()
+		if ok && lastCard.mode == Login {
+			log.Fatal(errors.New("Please punch out before punching in."))
 		}
 
 		if len(flag.Args()) < 1 {
@@ -77,7 +71,7 @@ func main() {
 	}
 
 	if *out {
-		lastCard, ok := timesheet.Last()
+		lastCard, ok := timesheet.last()
 		if !ok {
 			log.Fatal("You have no cards on record.")
 		}
@@ -138,12 +132,12 @@ func (c *card) string() string {
 	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, mode)
 }
 
-func (t *timesheet) IsEmpty() bool {
+func (t *timesheet) isEmpty() bool {
 	return len(*t) == 0
 }
 
-func (t *timesheet) Last() (card, bool) {
-	if t.IsEmpty() {
+func (t *timesheet) last() (card, bool) {
+	if t.isEmpty() {
 		return card{}, false
 	}
 
