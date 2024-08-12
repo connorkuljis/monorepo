@@ -145,8 +145,8 @@ func (t *timesheet) IsEmpty() bool {
 func (t *timesheet) Last() (card, bool) {
 	if t.IsEmpty() {
 		return card{}, false
-
 	}
+
 	timesheet := *t
 	return timesheet[len(timesheet)-1], true
 }
