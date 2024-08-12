@@ -52,13 +52,13 @@ func main() {
 	var currentCard card
 
 	if *in {
-		// initialise currentCard to avoid if-else
-		currentCard = NewCard()
-
+		// guard to protect double login
 		lastCard, ok := timesheet.last()
 		if ok && lastCard.mode == Login {
 			log.Fatal(errors.New("Please punch out before punching in."))
 		}
+
+		currentCard = NewCard()
 
 		if len(flag.Args()) < 1 {
 			log.Fatal(errors.New("Please provide a description."))
@@ -66,26 +66,32 @@ func main() {
 
 		currentCard.description = flag.Args()[0]
 		currentCard.login()
-		currentCard.save() // remember to save any time we login or logout.
-		fmt.Println("you are now logged in.")
 	}
 
 	if *out {
-		lastCard, ok := timesheet.last()
-		if !ok {
+		if timesheet.isEmpty() {
 			log.Fatal("You have no cards on record.")
 		}
 
-		if lastCard.mode == Logout {
+		// guard to protect double log out
+		lastCard, ok := timesheet.last()
+		if ok && lastCard.mode == Logout {
 			log.Fatal(errors.New("Please punch in before punching out."))
 		}
 
 		currentCard = lastCard
-
 		currentCard.logout()
-		currentCard.save()
-		fmt.Println("you are now logged out.")
 	}
+
+	if !*in || !*out {
+		var ok bool
+		currentCard, ok = timesheet.last()
+		if !ok {
+			return
+		}
+	}
+
+	fmt.Println(currentCard.string())
 }
 
 func NewCard() card {
@@ -97,11 +103,13 @@ func NewCard() card {
 func (c *card) login() {
 	c.mode = Login
 	c.stamp()
+	c.save()
 }
 
 func (c *card) logout() {
 	c.mode = Logout
 	c.stamp()
+	c.save()
 }
 
 func (c *card) stamp() {
