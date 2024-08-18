@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -38,9 +39,21 @@ func genHandler(ctx *context.Context, client *genai.Client) http.HandlerFunc {
 		JobDescription string `json:"description"`
 	}
 
+	var (
+		targetModel = "gemini-1.5-flash"
+		prompt      = "Please write a one-page cover letter for the job description and resume."
+		resumePath  = "documents/resume.pdf"
+	)
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Set header to allow POST or OPTION
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		if r.Method != "POST" {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
 		decoder := json.NewDecoder(r.Body)
 		var msg payload
@@ -49,39 +62,58 @@ func genHandler(ctx *context.Context, client *genai.Client) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		log.Println("Msg:", msg)
+		logger.Info("decoded message", "msg", msg)
 
-		resumePath := "documents/resume.pdf"
+		// remember to delete the file from the client after
 		resume, err := uploadDocument(*ctx, client, resumePath, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer client.DeleteFile(*ctx, resume.Name)
+		logger.Info("uploaded file", "resume", resume)
 
-		log.Println("Uploaded:", resume)
-
-		model := client.GenerativeModel("gemini-1.5-flash")
+		m := client.GenerativeModel(targetModel)
+		logger.Info("selected model:", "name", targetModel)
 
 		combinedPrompt := []genai.Part{
-			genai.Text("Please write a one-page cover letter for the job description and resume."),
+			genai.Text(prompt),
 			genai.Text(msg.JobDescription),
 			genai.FileData{URI: resume.URI},
 		}
-		log.Println("Prompt:", combinedPrompt)
+		logger.Info("combined prompt", "prompt", combinedPrompt)
 
 		// Generate content using the prompt.
-		mResp, err := model.GenerateContent(*ctx, combinedPrompt...)
+		mResp, err := m.GenerateContent(*ctx, combinedPrompt...)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("Response:", mResp)
+		logger.Info("generated content", "generatedContentResponse", mResp)
 
 		// Handle the response of generated text
+		var results []string
 		for _, c := range mResp.Candidates {
 			if c.Content != nil {
-				fmt.Fprintln(w, *c.Content)
+				var result string
+				for _, part := range c.Content.Parts {
+					result += fmt.Sprint(part)
+				}
+				results = append(results, result)
 			}
 		}
+		logger.Info("result", "result", results)
+
+		err = client.DeleteFile(*ctx, resume.Name)
+		if err != nil {
+			logger.Error("Failed to delete file", "file", resume.Name, "error", err.Error())
+			http.Error(w, "Unable to process your request due to an internal error", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write([]byte(results[0]))
+		if err != nil {
+			logger.Error("Unable to write data to connection", "w", w, "error", err.Error())
+			return
+		}
+
 		return
 	}
 }
