@@ -1,0 +1,8 @@
+# binary files
+/block
+/block-cli
+/dist
+/bin
+
+.DS_Store
+.idea
