@@ -1,29 +1,13 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+	"github.com/connorkuljis/seek-js/gemini"
 )
-
-const (
-	targetModel = "gemini-1.5-flash"
-	prompt      = "Please write a one-page cover letter for the job description and resume."
-	resumePath  = "documents/resume.pdf"
-)
-
-var logger *slog.Logger
-
-type payload struct {
-	JobDescription string `json:"description"`
-}
 
 func main() {
 	gemApiKey := os.Getenv("GEMINIAPIKEY")
@@ -31,36 +15,22 @@ func main() {
 		log.Fatal("Error. No google gemini API key! Please set env var `export G_API={your key here}`")
 	}
 
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(gemApiKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-
-	if false {
-		server := http.NewServeMux()
-		server.HandleFunc("/gen", genHandler(&ctx, client))
-		log.Println("Starting server on 6969")
-		log.Fatal(http.ListenAndServe(":6969", server))
-	}
-
-	if len(os.Args) <= 1 {
-		log.Fatal("Error: please provide a job description.")
-	}
-
-	mResp, err := uploaderWrapper(&ctx, client, os.Args[1])
+	g, err := gemini.NewGeminiClient(gemApiKey, "gemini-1.5-flash")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	results := toString(mResp)
-	fmt.Println(results[0])
+	server := http.NewServeMux()
+	server.HandleFunc("/gen", genHandler(g))
+	log.Println("Starting server on 6969")
+	log.Fatal(http.ListenAndServe(":6969", server))
 }
 
-func genHandler(ctx *context.Context, client *genai.Client) http.HandlerFunc {
+func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
+	type payload struct {
+		JobDescription string `json:"description"`
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -76,71 +46,36 @@ func genHandler(ctx *context.Context, client *genai.Client) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		logger.Info("decoded message", "msg", msg)
+		g.Logger.Info("decoded message", "msg", msg)
 
-		mResp, err := uploaderWrapper(ctx, client, msg.JobDescription)
+		resumePath := "documents/resume.pdf"
+		f, err := os.Open(resumePath)
 		if err != nil {
-			logger.Error("Error", "error", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			// TODO: fix error code
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer f.Close()
+
+		// TODO: defer client.DeleteFile(*ctx, resume.Name)
+		gf, err := g.UploadFile(f, nil)
+		if err != nil {
+			// TODO: fix error code
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		result := toString(mResp)
+		p := gemini.ResumePromptWrapper(msg.JobDescription, gf)
+
+		resp, err := g.GenContent(p)
+		if err != nil {
+			// TODO: fix error code
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		result := gemini.ToString(resp)
 
 		w.Write([]byte(result))
 	}
-}
-
-func uploaderWrapper(ctx *context.Context, client *genai.Client, desc string) (*genai.GenerateContentResponse, error) {
-	resume, err := uploadDocumentFromDisk(ctx, client, resumePath, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.DeleteFile(*ctx, resume.Name)
-	logger.Info("uploaded file", "resume", resume)
-
-	combinedPrompt := []genai.Part{
-		genai.Text(prompt),
-		genai.Text(desc),
-		genai.FileData{URI: resume.URI},
-	}
-	logger.Info("combined prompt", "prompt", combinedPrompt)
-
-	model := client.GenerativeModel(targetModel)
-	logger.Info("selected model:", "name", targetModel)
-
-	// Generate content using the prompt.
-	mResp, err := model.GenerateContent(*ctx, combinedPrompt...)
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Info("generated content", "generatedContentResponse", mResp)
-
-	return mResp, nil
-}
-
-func toString(mResp *genai.GenerateContentResponse) string {
-	var result string
-	for _, c := range mResp.Candidates {
-		if c.Content != nil {
-			result += fmt.Sprint(*c.Content)
-		}
-	}
-	return result
-}
-
-// Upload a document useing the file api
-func uploadDocumentFromDisk(ctx *context.Context, client *genai.Client, filename string, opts *genai.UploadFileOptions) (*genai.File, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	doc, err := client.UploadFile(*ctx, "", f, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return doc, nil
 }
