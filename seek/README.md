@@ -1,6 +1,4 @@
-# description
-
-an automation tool that generates a custom cover letter using google gemini.
+automation tool for cv generation.
 
 # program builds
 
