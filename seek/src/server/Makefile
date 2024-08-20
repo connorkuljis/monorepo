@@ -1,8 +1,12 @@
+.PHONY: all server cli clean
+
 server:
 	go build -o server cmd/server/***
 
-cli: 
+cli:
 	go build -o cli cmd/cli/***
 
+all: server cli
+
 clean:
-	rm server && rm cli
+	rm server cli

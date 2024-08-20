@@ -37,13 +37,7 @@ func NewGeminiClient(apiKey string, targetModel string) (*GeminiClient, error) {
 	}, nil
 }
 
-// f, err := os.Open(filename)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-// defer f.Close()
+// TODO: implement delete file
 // defer client.DeleteFile(*ctx, resume.Name)
 func (g *GeminiClient) UploadFile(r io.Reader, opts *genai.UploadFileOptions) (*genai.File, error) {
 	f, err := g.Client.UploadFile(*g.Ctx, "", r, opts)

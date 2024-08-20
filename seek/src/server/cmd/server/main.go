@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -48,34 +49,36 @@ func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 		}
 		g.Logger.Info("decoded message", "msg", msg)
 
-		resumePath := "documents/resume.pdf"
-		f, err := os.Open(resumePath)
+		// Below this line is duplicated in cli, but returning errors differently
+
+		f, err := os.Open("static/Connor-Kuljis_Resume_2024-07.pdf")
 		if err != nil {
-			// TODO: fix error code
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			e := fmt.Errorf("internal server error: %w", err)
+			g.Logger.Error("error", "error", e.Error())
+			http.Error(w, e.Error(), http.StatusInternalServerError)
 			return
 		}
-		defer f.Close()
 
-		// TODO: defer client.DeleteFile(*ctx, resume.Name)
 		gf, err := g.UploadFile(f, nil)
 		if err != nil {
-			// TODO: fix error code
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			e := fmt.Errorf("internal server error: %w", err)
+			g.Logger.Error("error", "error", e.Error())
+			http.Error(w, e.Error(), http.StatusInternalServerError)
 			return
 		}
+		defer g.Client.DeleteFile(*g.Ctx, gf.Name)
 
+		// p := gemini.ResumePromptWrapper(os.Args[1], gf)
 		p := gemini.ResumePromptWrapper(msg.JobDescription, gf)
 
 		resp, err := g.GenerateContent(p)
 		if err != nil {
-			// TODO: fix error code
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			e := fmt.Errorf("internal server error: %w", err)
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			g.Logger.Error("error", "error", e.Error())
 			return
 		}
 
-		result := gemini.ToString(resp)
-
-		w.Write([]byte(result))
+		w.Write([]byte(gemini.ToString(resp)))
 	}
 }
