@@ -26,7 +26,7 @@ type payload struct {
 }
 
 func main() {
-	gemApiKey := os.Getenv("G_API")
+	gemApiKey := os.Getenv("GEMINIAPIKEY")
 	if gemApiKey == "" {
 		log.Fatal("Error. No google gemini API key! Please set env var `export G_API={your key here}`")
 	}
