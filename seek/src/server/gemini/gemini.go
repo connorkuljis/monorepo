@@ -11,10 +11,6 @@ import (
 	"google.golang.org/api/option"
 )
 
-const (
-	targetModel = "gemini-1.5-flash"
-)
-
 type GeminiClient struct {
 	Client *genai.Client
 	Ctx    *context.Context
@@ -22,7 +18,7 @@ type GeminiClient struct {
 	Model  *genai.GenerativeModel
 }
 
-func NewGeminiClient(apiKey string, modelName string) (*GeminiClient, error) {
+func NewGeminiClient(apiKey string, targetModel string) (*GeminiClient, error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	ctx := context.Background()
@@ -31,8 +27,7 @@ func NewGeminiClient(apiKey string, modelName string) (*GeminiClient, error) {
 		return nil, err
 	}
 
-	model := client.GenerativeModel(modelName)
-	// logger.Info("selected model:", "name", targetModel)
+	model := client.GenerativeModel(targetModel)
 
 	return &GeminiClient{
 		Client: client,
@@ -62,7 +57,7 @@ func (g *GeminiClient) UploadFile(r io.Reader, opts *genai.UploadFileOptions) (*
 }
 
 // Generate content using the prompt.
-func (g *GeminiClient) GenContent(prompt []genai.Part) (*genai.GenerateContentResponse, error) {
+func (g *GeminiClient) GenerateContent(prompt []genai.Part) (*genai.GenerateContentResponse, error) {
 	resp, err := g.Model.GenerateContent(*g.Ctx, prompt...)
 	if err != nil {
 		return nil, err

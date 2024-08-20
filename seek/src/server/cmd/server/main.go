@@ -67,7 +67,7 @@ func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 
 		p := gemini.ResumePromptWrapper(msg.JobDescription, gf)
 
-		resp, err := g.GenContent(p)
+		resp, err := g.GenerateContent(p)
 		if err != nil {
 			// TODO: fix error code
 			http.Error(w, err.Error(), http.StatusBadRequest)
