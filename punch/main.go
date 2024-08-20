@@ -11,17 +11,18 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // When logging in a new card is created.
 // When logging out, a copy of the login card is used.
 type card struct {
-	id          int32
+	id          uuid.UUID
 	timestamp   int64
 	description string
 	mode        mode
@@ -49,8 +50,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var currentCard card
-
 	if *in {
 		// guard to protect double login
 		lastCard, ok := timesheet.last()
@@ -58,7 +57,7 @@ func main() {
 			log.Fatal(errors.New("Please punch out before punching in."))
 		}
 
-		currentCard = NewCard()
+		currentCard := NewCard()
 
 		if len(flag.Args()) < 1 {
 			log.Fatal(errors.New("Please provide a description."))
@@ -66,6 +65,9 @@ func main() {
 
 		currentCard.description = flag.Args()[0]
 		currentCard.login()
+		fmt.Println(currentCard.String())
+
+		return
 	}
 
 	if *out {
@@ -79,24 +81,19 @@ func main() {
 			log.Fatal(errors.New("Please punch in before punching out."))
 		}
 
-		currentCard = lastCard
+		currentCard := lastCard
 		currentCard.logout()
+		fmt.Println(currentCard.String())
+
+		return
 	}
 
-	if !*in || !*out {
-		var ok bool
-		currentCard, ok = timesheet.last()
-		if !ok {
-			return
-		}
-	}
-
-	fmt.Println(currentCard.string())
+	timesheet.Print()
 }
 
 func NewCard() card {
 	return card{
-		id: rand.Int31(),
+		id: uuid.New(),
 	}
 }
 
@@ -123,10 +120,10 @@ func (c *card) save() {
 	}
 	defer file.Close()
 
-	fmt.Fprintln(file, c.string())
+	fmt.Fprintln(file, c.String())
 }
 
-func (c *card) string() string {
+func (c *card) String() string {
 	var mode string
 
 	if c.mode == Login {
@@ -137,7 +134,7 @@ func (c *card) string() string {
 		mode = "LOGOUT"
 	}
 
-	return fmt.Sprintf("%d\t%d\t%s\t%s", c.id, c.timestamp, c.description, mode)
+	return fmt.Sprintf("%s\t%d\t%s\t%s", c.id.String(), c.timestamp, c.description, mode)
 }
 
 func (t *timesheet) isEmpty() bool {
@@ -151,6 +148,12 @@ func (t *timesheet) last() (card, bool) {
 
 	timesheet := *t
 	return timesheet[len(timesheet)-1], true
+}
+
+func (t *timesheet) Print() {
+	for i, c := range *t {
+		fmt.Println(i, c.String())
+	}
 }
 
 func getTimesheet() (timesheet, error) {
@@ -170,7 +173,7 @@ func getTimesheet() (timesheet, error) {
 			continue
 		}
 
-		id, err := strconv.Atoi(fields[0])
+		id, err := uuid.Parse(fields[0])
 		if err != nil {
 			log.Printf("Invalid id: %s\n", fields[0])
 			continue
@@ -196,7 +199,7 @@ func getTimesheet() (timesheet, error) {
 		}
 
 		card := card{
-			id:          int32(id),
+			id:          id,
 			timestamp:   int64(time),
 			description: desc,
 			mode:        mode,
