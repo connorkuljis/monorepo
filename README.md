@@ -1,5 +1,5 @@
 # monorepo
 
-an aircraft carrier if it were a codebase.
+a codebase if it were an aircraft carrier.
 
 
