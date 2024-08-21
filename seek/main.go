@@ -31,7 +31,7 @@ func main() {
 		g.Logger.Info("defaulting to port", "port", port)
 	}
 
-	g.Logger.Info("listening on port", "post", port)
+	g.Logger.Info("started listening on port", "port", port)
 	err = http.ListenAndServe(":"+port, server)
 	if err != nil {
 		g.Logger.Error("error listening an serving", "port", port, "message", err.Error())

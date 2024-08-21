@@ -1,7 +1,0 @@
-
-
-
-
-docker build -t seek-test-1 .
-
-docker run -p 8080:8080 -e GEMINIAPIKEY="$(echo $GEMINIAPIKEY)" seek-test-1
