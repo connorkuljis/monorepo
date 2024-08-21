@@ -13,18 +13,30 @@ import (
 func main() {
 	gemApiKey := os.Getenv("GEMINIAPIKEY")
 	if gemApiKey == "" {
-		log.Fatal("Error. No google gemini API key! Please set env var `export G_API={your key here}`")
+		log.Fatal("missing environment variable [GEMINIAPIKEY]")
 	}
 
 	g, err := gemini.NewGeminiClient(gemApiKey, "gemini-1.5-flash")
 	if err != nil {
-		log.Fatal(err)
+		g.Logger.Error("error creating new gemini client", "message", err.Error())
+		os.Exit(1)
 	}
 
 	server := http.NewServeMux()
 	server.HandleFunc("/gen", genHandler(g))
-	log.Println("Starting server on 6969")
-	log.Fatal(http.ListenAndServe(":6969", server))
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		g.Logger.Info("defaulting to port", "port", port)
+	}
+
+	g.Logger.Info("started listening on port", "port", port)
+	err = http.ListenAndServe(":"+port, server)
+	if err != nil {
+		g.Logger.Error("error listening an serving", "port", port, "message", err.Error())
+		os.Exit(1)
+	}
 }
 
 func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
