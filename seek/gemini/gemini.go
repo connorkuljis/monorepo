@@ -37,8 +37,6 @@ func NewGeminiClient(apiKey string, targetModel string) (*GeminiClient, error) {
 	}, nil
 }
 
-// TODO: implement delete file
-// defer client.DeleteFile(*ctx, resume.Name)
 func (g *GeminiClient) UploadFile(r io.Reader, opts *genai.UploadFileOptions) (*genai.File, error) {
 	f, err := g.Client.UploadFile(*g.Ctx, "", r, opts)
 	if err != nil {
@@ -81,3 +79,7 @@ func ToString(response *genai.GenerateContentResponse) string {
 	}
 	return result
 }
+
+// TODO:
+// - pass logger as dependency to NewGeminiClient OR functional options builder pattern `withLogger(logger logger)`
+// - implement delete file `defer client.DeleteFile(*ctx, resume.Name)``
