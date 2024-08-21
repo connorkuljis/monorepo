@@ -1,4 +1,4 @@
-# key-diff
+# kdiff
 
 calculates records the delay between each each press.
 
