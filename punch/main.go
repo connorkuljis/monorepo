@@ -40,6 +40,9 @@ const output = "/tmp/logs.txt"
 
 type timesheet []card
 
+// TODO: convert flags to args eg:
+//
+//	`punch -in <desc>` becomes `punch in <desc>`
 func main() {
 	in := flag.Bool("in", false, "punch in")
 	out := flag.Bool("out", false, "punch out")
