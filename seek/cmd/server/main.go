@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -23,6 +23,7 @@ func main() {
 	}
 
 	server := http.NewServeMux()
+	server.HandleFunc("/", indexHandler())
 	server.HandleFunc("/gen", genHandler(g))
 
 	port := os.Getenv("PORT")
@@ -39,6 +40,9 @@ func main() {
 	}
 }
 
+// TODO: support both form data and json data
+// TODO: implement caching resume data by using existing URI
+// TODO: flag for pro or flash model selection
 func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 	type payload struct {
 		JobDescription string `json:"description"`
@@ -52,14 +56,22 @@ func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 			return
 		}
 
-		decoder := json.NewDecoder(r.Body)
+		r.ParseForm()
+
 		var msg payload
-		err := decoder.Decode(&msg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		g.Logger.Info("decoded message", "msg", msg)
+		msg.JobDescription = r.FormValue("description")
+		g.Logger.Info("got description", "description", msg.JobDescription)
+
+		// decoder := json.NewDecoder(r.Body)
+		// var msg payload
+		// err := decoder.Decode(&msg)
+		// if err != nil {
+		// 	e := fmt.Errorf("error decoding request body: %w", err)
+		// 	g.Logger.Error("bad request", "error", e.Error(), "body", r.Body)
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
+		// g.Logger.Info("decoded message", "msg", msg)
 
 		// Below this line is duplicated in cli, but returning errors differently
 
@@ -80,7 +92,6 @@ func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 		}
 		defer g.Client.DeleteFile(*g.Ctx, gf.Name)
 
-		// p := gemini.ResumePromptWrapper(os.Args[1], gf)
 		p := gemini.ResumePromptWrapper(msg.JobDescription, gf)
 
 		resp, err := g.GenerateContent(p)
@@ -92,5 +103,19 @@ func genHandler(g *gemini.GeminiClient) http.HandlerFunc {
 		}
 
 		w.Write([]byte(gemini.ToString(resp)))
+	}
+}
+
+func indexHandler() http.HandlerFunc {
+	page, err := template.New("index").Parse(`
+		<h1>hello</h1>
+		<form method='post' action='/gen' enctype='application/json'>
+			<input id ='text' type='text' name='description' placeholder='enter job description'/>
+		</form>`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		page.Execute(w, nil)
 	}
 }

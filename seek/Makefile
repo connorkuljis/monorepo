@@ -3,10 +3,10 @@
 all: server cli
 
 server:
-	go build -o server cmd/server/***
+	go build -v -o server cmd/server/***
 
 cli:
-	go build -o cli cmd/cli/***
+	go build -v -o cli cmd/cli/***
 
 clean:
 	rm server cli

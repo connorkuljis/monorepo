@@ -73,9 +73,12 @@ func ResumePromptWrapper(jobDescription string, resume *genai.File) []genai.Part
 func ToString(response *genai.GenerateContentResponse) string {
 	var result string
 	for _, c := range response.Candidates {
-		if c.Content != nil {
-			result += fmt.Sprint(*c.Content)
+		for _, p := range c.Content.Parts {
+			result += fmt.Sprint(p)
 		}
+		// if c.Content != nil {
+		// 	result += fmt.Sprint(*c.Content)
+		// }
 	}
 	return result
 }
