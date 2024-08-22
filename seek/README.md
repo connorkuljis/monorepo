@@ -1,29 +1,21 @@
-automation tool for cv generation.
+# Seek: AI-Powered Cover Letter Generator
 
-# program builds
+## Overview
 
-go module builds two programs:
-
-1. server - http server accepts json
-
-2. cli - program accept standard input
-
-# usage
-
-`make` - builds server and cli
-
-`make server` - builds just the server
-
-`make cli` - builds just the cli
-
-`make clean` - removes server and cli program binaries in root dir
-
----
-
-`GEMINIAPIKEY={key xxxx} ./server`
-
-`GEMINIAPIKEY={key xxxx} ./cli [job desciption text]`
+Seek is a web-based application designed to automate the process of cover letter generation using advanced artificial intelligence technology. It leverages Google's Gemini AI model to produce customized cover letters for job applications.
 
 
+## Cloud Infrastructure
+
+- Platform: Google Cloud Run
+- Benefits:
+  - Serverless execution
+  - Automatic scaling based on demand
+  - Pay-per-use pricing model
 
 
+## Build
+
+`make` - builds server and cli binaries
+
+`make deploy` - deploys to gcr.
