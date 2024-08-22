@@ -16,7 +16,7 @@ func main() {
 		log.Fatal("missing environment variable [GEMINIAPIKEY]")
 	}
 
-	g, err := gemini.NewGeminiClient(gemApiKey, "gemini-1.5-flash")
+	g, err := gemini.NewGeminiClient(gemApiKey, "gemini-1.5-pro")
 	if err != nil {
 		g.Logger.Error("error creating new gemini client", "message", err.Error())
 		os.Exit(1)
