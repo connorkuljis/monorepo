@@ -60,13 +60,13 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part) (*genai.GenerateCont
 	return resp, nil
 }
 
-func ResumePromptWrapper(jobDescription string, resume *genai.File) []genai.Part {
+func ResumePromptWrapper(jobDescription string, uri string) []genai.Part {
 	defaultPrompt := "Please write a one-page cover letter for the job description and resume."
 
 	return []genai.Part{
 		genai.Text(defaultPrompt),
 		genai.Text(jobDescription),
-		genai.FileData{URI: resume.URI},
+		genai.FileData{URI: uri},
 	}
 }
 
