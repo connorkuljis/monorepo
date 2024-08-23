@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/connorkuljis/seek-js/gemini"
+	"github.com/connorkuljis/seek-js/internal/gemini"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	}
 	defer g.Client.DeleteFile(*g.Ctx, gf.Name)
 
-	p := gemini.ResumePromptWrapper(os.Args[1], gf)
+	p := gemini.ResumePromptWrapper(os.Args[1], gf.URI)
 
 	resp, err := g.GenerateContent(p)
 	if err != nil {
