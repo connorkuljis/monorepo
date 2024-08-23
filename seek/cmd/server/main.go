@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/connorkuljis/seek-js/gemini"
+	"github.com/connorkuljis/seek-js/internal/gemini"
 	"github.com/gorilla/sessions"
 )
 
