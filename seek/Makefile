@@ -14,6 +14,7 @@ cli:
 	go build -v -o cli cmd/cli/***
 
 clean:
+	docker image prune -a
 	rm -f server cli
 
 build:
