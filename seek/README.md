@@ -19,3 +19,7 @@ Seek is a web-based application designed to automate the process of cover letter
 `make` - builds server and cli binaries
 
 `make deploy` - deploys to gcr.
+
+## Resources
+- [https://github.com/GoogleContainerTools/distroless](https://github.com/GoogleContainerTools/distroless)
+- [https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard](https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard)
