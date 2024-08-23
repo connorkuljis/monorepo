@@ -23,4 +23,4 @@ push: build
 	docker push connorkuljis/seek:latest
 
 deploy: push
-	gcloud run deploy seek-test-1 \  --image 'docker.io/connorkuljis/seek' \ --allow-unauthenticated \  --set-env-vars=GEMINIAPIKEY="$(GEMINIAPIKEY)"
+	gcloud run deploy seek-test-1 --image 'docker.io/connorkuljis/seek' --allow-unauthenticated --set-env-vars=GEMINIAPIKEY="$(GEMINIAPIKEY)"
