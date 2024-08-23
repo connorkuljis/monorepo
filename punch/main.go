@@ -91,7 +91,22 @@ func main() {
 		return
 	}
 
-	timesheet.Print()
+	// timesheet.Print()
+
+	var pairs [][]card
+
+	// Iterate over the slice with a step of 2
+	for i := 0; i < len(timesheet); i += 2 {
+		// Check if there's at least one more element to form a pair
+		if i+1 < len(timesheet) {
+			// Add the pair to the result slice
+			pairs = append(pairs, []card{timesheet[i], timesheet[i+1]})
+			diff(timesheet[i], timesheet[i+1])
+		} else {
+			// If there's an odd element out, add it as a single-element pair
+			pairs = append(pairs, []card{timesheet[i]})
+		}
+	}
 }
 
 func NewCard() card {
@@ -216,4 +231,12 @@ func getTimesheet() (timesheet, error) {
 	}
 
 	return timesheet, nil
+}
+
+func diff(c1, c2 card) {
+	t1 := time.UnixMilli(c1.timestamp)
+	t2 := time.UnixMilli(c2.timestamp)
+
+	diff := t2.Sub(t1)
+	fmt.Println(diff, c1.description)
 }
