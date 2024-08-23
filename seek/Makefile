@@ -6,7 +6,9 @@ GEMINIAPIKEY ?= $(shell echo $$GEMINIAPIKEY)
 all: server cli
 
 server:
-	go build -v -o server cmd/server/***
+	docker build -t connorkuljis/seek:dev .
+
+	docker run -p 8080:8080 -e GEMINIAPIKEY="$(GEMINIAPIKEY)" -t connorkuljis/seek:dev
 
 cli:
 	go build -v -o cli cmd/cli/***
@@ -21,4 +23,4 @@ push: build
 	docker push connorkuljis/seek:latest
 
 deploy: push
-	gcloud run deploy seek-test-1 --image 'docker.io/connorkuljis/seek' --allow-unauthenticated --set-env-vars=GEMINIAPIKEY="$(GEMINIAPIKEY)"
+	gcloud run deploy seek-test-1 \  --image 'docker.io/connorkuljis/seek' \ --allow-unauthenticated \  --set-env-vars=GEMINIAPIKEY="$(GEMINIAPIKEY)"
