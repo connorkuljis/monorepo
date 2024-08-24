@@ -146,12 +146,6 @@ func uploadFileHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http
 			return
 		}
 
-		err = os.MkdirAll("./static", os.ModePerm)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		gf, err := g.UploadFile(file, nil)
 		if err != nil {
 			e := fmt.Errorf("internal server error: %w", err)
