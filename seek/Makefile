@@ -21,3 +21,6 @@ push: build
 
 deploy: push
 	gcloud run deploy seek-test-1 --image 'docker.io/connorkuljis/seek' --allow-unauthenticated --set-env-vars=GEMINIAPIKEY="$(GEMINIAPIKEY)"
+
+status:
+	 gcloud run services describe seek-test-1
