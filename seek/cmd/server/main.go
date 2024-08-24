@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -153,26 +152,7 @@ func uploadFileHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http
 			return
 		}
 
-		dst, err := os.OpenFile(filepath.Join("static", header.Filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer dst.Close()
-
-		_, err = io.Copy(dst, file)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		_, err = dst.Seek(0, 0)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		gf, err := g.UploadFile(dst, nil)
+		gf, err := g.UploadFile(file, nil)
 		if err != nil {
 			e := fmt.Errorf("internal server error: %w", err)
 			g.Logger.Error("error", "error", e.Error())
