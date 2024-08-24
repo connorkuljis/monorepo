@@ -1,4 +1,4 @@
-.PHONY: all server cli clean build push deploy
+.PHONY: all server clean build push deploy
 
 # Environment variables
 GEMINIAPIKEY ?= $(shell echo $$GEMINIAPIKEY)
@@ -7,11 +7,7 @@ all: server cli
 
 server:
 	docker build -t connorkuljis/seek:dev .
-
 	docker run -p 8080:8080 -e GEMINIAPIKEY="$(GEMINIAPIKEY)" -t connorkuljis/seek:dev
-
-cli:
-	go build -v -o cli cmd/cli/***
 
 clean:
 	docker image prune -a

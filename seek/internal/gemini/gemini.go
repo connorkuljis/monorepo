@@ -29,12 +29,16 @@ func NewGeminiClient(apiKey string, targetModel string) (*GeminiClient, error) {
 
 	model := client.GenerativeModel(targetModel)
 
-	return &GeminiClient{
+	g := &GeminiClient{
 		Client: client,
 		Ctx:    &ctx,
 		Logger: logger,
 		Model:  model,
-	}, nil
+	}
+
+	g.Logger.Info("created new client", "model", targetModel)
+
+	return g, nil
 }
 
 func (g *GeminiClient) UploadFile(r io.Reader, opts *genai.UploadFileOptions) (*genai.File, error) {
@@ -55,7 +59,7 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part) (*genai.GenerateCont
 		return nil, err
 	}
 
-	g.Logger.Info("generated content", "generatedContentResponse", resp)
+	g.Logger.Info("generated content", "total_token_count", resp.UsageMetadata.TotalTokenCount)
 
 	return resp, nil
 }
@@ -63,11 +67,13 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part) (*genai.GenerateCont
 func ResumePromptWrapper(jobDescription string, uri string) []genai.Part {
 	defaultPrompt := "Please write a one-page cover letter for the job description and resume."
 
-	return []genai.Part{
+	parts := []genai.Part{
 		genai.Text(defaultPrompt),
 		genai.Text(jobDescription),
 		genai.FileData{URI: uri},
 	}
+
+	return parts
 }
 
 func ToString(response *genai.GenerateContentResponse) string {
@@ -76,9 +82,6 @@ func ToString(response *genai.GenerateContentResponse) string {
 		for _, p := range c.Content.Parts {
 			result += fmt.Sprint(p)
 		}
-		// if c.Content != nil {
-		// 	result += fmt.Sprint(*c.Content)
-		// }
 	}
 	return result
 }

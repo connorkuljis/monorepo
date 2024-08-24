@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// TODO: add structured logging to http errors.
 // TODO: logging middleware.
 // TODO: session middlware.
 // TODO: parse index page from a file.
@@ -36,7 +35,7 @@ func main() {
 	store := sessions.NewCookieStore([]byte("aaaaaaaaaaaaaa"))
 
 	server.HandleFunc("/", indexHandler())
-	server.HandleFunc("/gen", genHandler(g, store))
+	server.HandleFunc("/gen", generateContentHandler(g, store))
 	server.HandleFunc("/upload", uploadFileHandler(g, store))
 
 	port := os.Getenv("PORT")
@@ -71,10 +70,11 @@ func indexHandler() http.HandlerFunc {
 	}
 }
 
-func genHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.HandlerFunc {
+func generateContentHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		if r.Method != http.MethodPost {
+			g.Logger.Warn("method_not_allowed", "expected_post")
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -82,28 +82,31 @@ func genHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.Handle
 
 		sess, err := store.Get(r, "session")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			g.Logger.Error("error_getting_session", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		var uri string
-		switch v := sess.Values["uri"].(type) {
-		case string:
-			uri = v
-		default:
-			http.Error(w, "Cannot find URI value in session. Did you upload a file?", http.StatusNotAcceptable)
+		uri, ok := sess.Values["uri"].(string)
+		if !ok {
+			err := fmt.Errorf("invalid session: no value for 'uri'")
+			g.Logger.Error("invalid_session", "missing_uri", err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		err = r.ParseForm()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			g.Logger.Error("error_parsing_form", err)
+			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
 
 		jobDescription := r.FormValue("description")
 		if jobDescription == "" {
-			http.Error(w, "Description cannot be emtpy", http.StatusBadRequest)
+			err := fmt.Errorf("empty form field: 'description'")
+			g.Logger.Error("missing_jobdescription", err)
+			http.Error(w, "Bad request (missing description)", http.StatusBadRequest)
 			return
 		}
 
@@ -111,11 +114,17 @@ func genHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.Handle
 
 		resp, err := g.GenerateContent(p)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			g.Logger.Error("error_generating_content", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		sessions.Save(r, w)
+		err = sessions.Save(r, w)
+		if err != nil {
+			g.Logger.Error("error_saving_session", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
 		w.Write([]byte(gemini.ToString(resp)))
 	}
@@ -124,33 +133,36 @@ func genHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.Handle
 func uploadFileHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
+			g.Logger.Warn("method_not_allowed", "expected_post")
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
 		sess, err := store.Get(r, "session")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			g.Logger.Error("Error getting session:", err)
+			http.Error(w, "Session error", http.StatusInternalServerError)
 			return
 		}
 
 		file, header, err := r.FormFile("pdfFile")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			g.Logger.Error("Error getting file:", err)
+			http.Error(w, "File error", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
 
 		if filepath.Ext(header.Filename) != ".pdf" {
+			g.Logger.Error("Invalid file format:", header.Filename)
 			http.Error(w, "Only PDF files are allowed", http.StatusBadRequest)
 			return
 		}
 
 		gf, err := g.UploadFile(file, nil)
 		if err != nil {
-			e := fmt.Errorf("internal server error: %w", err)
-			g.Logger.Error("error", "error", e.Error())
-			http.Error(w, e.Error(), http.StatusInternalServerError)
+			g.Logger.Error("Error uploading file:", err)
+			http.Error(w, "Upload error", http.StatusInternalServerError)
 			return
 		}
 
@@ -158,7 +170,8 @@ func uploadFileHandler(g *gemini.GeminiClient, store *sessions.CookieStore) http
 
 		err = sessions.Save(r, w)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			g.Logger.Error("Error saving session:", err)
+			http.Error(w, "Session error", http.StatusInternalServerError)
 			return
 		}
 
