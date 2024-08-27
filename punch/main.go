@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/google/uuid"
@@ -91,22 +92,16 @@ func main() {
 		return
 	}
 
-	// timesheet.Print()
-
-	var pairs [][]card
-
-	// Iterate over the slice with a step of 2
-	for i := 0; i < len(timesheet); i += 2 {
-		// Check if there's at least one more element to form a pair
-		if i+1 < len(timesheet) {
-			// Add the pair to the result slice
-			pairs = append(pairs, []card{timesheet[i], timesheet[i+1]})
-			diff(timesheet[i], timesheet[i+1])
-		} else {
-			// If there's an odd element out, add it as a single-element pair
-			pairs = append(pairs, []card{timesheet[i]})
+	// TODO: exec this as `-report` flag
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
+	pairs := timesheet.GetPairs()
+	for _, pair := range pairs {
+		if len(pair) == 2 {
+			duration := diff(pair[0], pair[1])
+			fmt.Fprintf(w, "%s\t%s\t%s\n", pair[0].id.String(), duration, pair[0].description)
 		}
 	}
+	w.Flush()
 }
 
 func NewCard() card {
@@ -174,6 +169,21 @@ func (t *timesheet) Print() {
 	}
 }
 
+func (t *timesheet) GetPairs() [][]card {
+	timesheet := *t
+	var pairs [][]card
+	for i := 0; i < len(timesheet); i += 2 {
+		pair := []card{timesheet[i]}
+		hasOneMore := i+1 < len(timesheet)
+		if hasOneMore {
+			pair = append(pair, timesheet[i+1])
+			diff(timesheet[i], timesheet[i+1])
+		}
+		pairs = append(pairs, pair)
+	}
+	return pairs
+}
+
 func getTimesheet() (timesheet, error) {
 	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
@@ -233,10 +243,8 @@ func getTimesheet() (timesheet, error) {
 	return timesheet, nil
 }
 
-func diff(c1, c2 card) {
+func diff(c1, c2 card) time.Duration {
 	t1 := time.UnixMilli(c1.timestamp)
 	t2 := time.UnixMilli(c2.timestamp)
-
-	diff := t2.Sub(t1)
-	fmt.Println(diff, c1.description)
+	return t2.Sub(t1)
 }
