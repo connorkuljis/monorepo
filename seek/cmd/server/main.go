@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/connorkuljis/seek-js/internal/gemini"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -93,8 +94,15 @@ func (h *Handler) IndexHandler(c echo.Context) error {
 	if !ok {
 		// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
 	}
+	filename, ok := sess.Values["filename"].(string)
+	if !ok {
+		// TODO:
+	}
 
-	return c.Render(http.StatusOK, "index", uri)
+	return c.Render(http.StatusOK, "index", map[string]string{
+		"URI":      uri,
+		"Filename": filename,
+	})
 }
 
 func (h *Handler) GenerateContentHandler(c echo.Context) error {
@@ -169,12 +177,14 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	}
 	defer f.Close()
 
-	gf, err := h.G.UploadFile(f, fileHeader.Filename, nil)
+	opts := &genai.UploadFileOptions{DisplayName: fileHeader.Filename}
+	gf, err := h.G.UploadFile(f, "", opts)
 	if err != nil {
 		return err
 	}
 
 	sess.Values["uri"] = gf.URI
+	sess.Values["filename"] = fileHeader.Filename
 
 	err = sessions.Save(c.Request(), c.Response())
 	if err != nil {
