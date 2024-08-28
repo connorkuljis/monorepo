@@ -24,7 +24,11 @@
             placeholder="Enter a job description"
             required
           />
-          <input type="submit" value="Generate" />
+          <select name="model" id="gemini-model">
+            <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+          </select>
+          <input type="submit" value="generate" />
         </fieldset>
       </form>
       <div id="result"></div>

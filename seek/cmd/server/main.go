@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -37,6 +38,8 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 }
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	geminiAPIKey := os.Getenv(EnvGeminiAPIKey)
 	if geminiAPIKey == "" {
 		log.Fatalf("Error: Required environment variable %s is not set.\n"+
@@ -45,7 +48,7 @@ func main() {
 			"Example: export %s=<value>", EnvGeminiAPIKey, EnvGeminiAPIKey, EnvGeminiAPIKey)
 	}
 
-	g, err := gemini.NewGeminiClient(geminiAPIKey, GeminiModelName)
+	g, err := gemini.NewGeminiClient(geminiAPIKey, logger)
 	if err != nil {
 		g.Logger.Error("error creating new gemini client", "message", err.Error())
 		os.Exit(1)
@@ -60,9 +63,7 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(session.Middleware(store))
 
-	e.Renderer = &Template{
-		templates: template.Must(template.ParseGlob("templates/*")),
-	}
+	e.Renderer = &Template{template.Must(template.ParseGlob("templates/*.html"))}
 
 	e.GET("/", h.IndexHandler)
 	e.POST("/gen", h.GenerateContentHandler)
@@ -111,9 +112,24 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "empty form value for: `description`")
 	}
 
+	model := c.FormValue("model")
+	if err != nil {
+		return err
+	}
+
+	var targetModel gemini.Model
+	switch model {
+	case "gemini-1.5-flash":
+		targetModel = gemini.Flash
+	case "gemini-1.5-pro":
+		targetModel = gemini.Pro
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
+	}
+
 	p := gemini.ResumePromptWrapper(jobDescription, uri)
 
-	resp, err := h.G.GenerateContent(p)
+	resp, err := h.G.GenerateContent(p, targetModel)
 	if err != nil {
 		return err
 	}
