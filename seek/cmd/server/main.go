@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -15,9 +15,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// TODO: [ui] return results using htmx OR stream them in.
 // TODO: [ui] chose model option.
-// TODO: [ui] styling.
 // TODO: what happens if URI points to a deleted file? -> internal server error: do not have perms or deleted.
 
 const (
@@ -28,6 +26,14 @@ const (
 
 type Handler struct {
 	G *gemini.GeminiClient
+}
+
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
 }
 
 func main() {
@@ -54,6 +60,10 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(session.Middleware(store))
 
+	e.Renderer = &Template{
+		templates: template.Must(template.ParseGlob("templates/*")),
+	}
+
 	e.GET("/", h.IndexHandler)
 	e.POST("/gen", h.GenerateContentHandler)
 	e.POST("/upload", h.UploadFileHandler)
@@ -72,18 +82,17 @@ func main() {
 }
 
 func (h *Handler) IndexHandler(c echo.Context) error {
-	t, err := template.New("index").ParseFiles("templates/index.html")
+	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
 	}
 
-	var tpl bytes.Buffer
-	err = t.ExecuteTemplate(&tpl, "index", nil)
-	if err != nil {
-		return err
+	uri, ok := sess.Values["uri"].(string)
+	if !ok {
+		// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
 	}
 
-	return c.HTML(http.StatusOK, tpl.String())
+	return c.Render(http.StatusOK, "index", uri)
 }
 
 func (h *Handler) GenerateContentHandler(c echo.Context) error {
