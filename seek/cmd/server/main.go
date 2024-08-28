@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"log"
@@ -53,20 +54,17 @@ func main() {
 }
 
 func indexHandler() http.HandlerFunc {
-	page, err := template.New("index").Parse(`
-<h1>hello</h1>
-<form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="pdfFile" accept=".pdf" required>
-    <button type="submit">Upload</button>
-</form>
-<form method='post' action='/gen' enctype='application/json'>
-	<input id ='text' type='text' name='description' placeholder='enter job description'/>
-</form>`)
+	t, err := template.New("index").ParseFiles("templates/index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		page.Execute(w, nil)
+		var tpl bytes.Buffer
+		err = t.ExecuteTemplate(&tpl, "index", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		w.Write(tpl.Bytes())
 	}
 }
 

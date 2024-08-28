@@ -1,0 +1,19 @@
+{{ define "index" }}
+<html>
+  <h1>seek - ai generated cover letter</h1>
+
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="pdfFile" accept=".pdf" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <form method="post" action="/gen" enctype="application/json">
+    <input
+      id="text"
+      type="text"
+      name="description"
+      placeholder="enter job description"
+    />
+  </form>
+</html>
+{{ end }}
