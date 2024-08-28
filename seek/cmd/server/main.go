@@ -15,25 +15,34 @@ import (
 
 // TODO: logging middleware.
 // TODO: session middlware.
-// TODO: parse index page from a file.
 // TODO: add htmx.
 // TODO: chose model option.
 // TODO: what happens if URI points to a deleted file?
 // TODO: check correct respone code for file upload.
+
+const (
+	EnvGeminiAPIKey string = "GEMINIAPIKEY"
+	GeminiModelName string = "gemini-1.5-flash"
+	SessionAuthKey  string = "aaaaaaaaaaaaaa"
+)
+
 func main() {
-	gemApiKey := os.Getenv("GEMINIAPIKEY")
-	if gemApiKey == "" {
-		log.Fatal("missing environment variable [GEMINIAPIKEY]")
+	geminiAPIKey := os.Getenv(EnvGeminiAPIKey)
+	if geminiAPIKey == "" {
+		log.Fatalf("Error: Required environment variable %s is not set.\n"+
+			"This variable is necessary to connect to the gemini api.\n"+
+			"Please set %s before running the application.\n"+
+			"Example: export %s=<value>", EnvGeminiAPIKey, EnvGeminiAPIKey, EnvGeminiAPIKey)
 	}
 
-	g, err := gemini.NewGeminiClient(gemApiKey, "gemini-1.5-flash")
+	g, err := gemini.NewGeminiClient(geminiAPIKey, GeminiModelName)
 	if err != nil {
 		g.Logger.Error("error creating new gemini client", "message", err.Error())
 		os.Exit(1)
 	}
 
 	server := http.NewServeMux()
-	store := sessions.NewCookieStore([]byte("aaaaaaaaaaaaaa"))
+	store := sessions.NewCookieStore([]byte(SessionAuthKey))
 
 	server.HandleFunc("/", indexHandler())
 	server.HandleFunc("/gen", generateContentHandler(g, store))
