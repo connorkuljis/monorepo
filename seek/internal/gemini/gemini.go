@@ -47,8 +47,8 @@ func NewGeminiClient(apiKey string, logger *slog.Logger) (*GeminiClient, error) 
 	return g, nil
 }
 
-func (g *GeminiClient) UploadFile(r io.Reader, opts *genai.UploadFileOptions) (*genai.File, error) {
-	f, err := g.Client.UploadFile(*g.Ctx, "", r, opts)
+func (g *GeminiClient) UploadFile(r io.Reader, filename string, opts *genai.UploadFileOptions) (*genai.File, error) {
+	f, err := g.Client.UploadFile(*g.Ctx, filename, r, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +69,7 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai
 	}
 
 	m := g.Client.GenerativeModel(name)
+
 	m.GenerationConfig = genai.GenerationConfig{
 		ResponseMIMEType: "application/json",
 	}
@@ -111,34 +112,16 @@ func ToString(resp *genai.GenerateContentResponse) string {
 		}
 	}
 
-	// for _, c := range resp.Candidates {
-	// 	if c.Content != nil {
-	// 		// fmt.Println(*c.Content)
-	// 		result += fmt.Sprint(*c.Content)
-	// 	}
-	// }
-
 	return result
 }
 
-func NewCoverLetterFromJSON(data string) (CoverLetter, error) {
+func ParseCoverLetterJSON(jsonString string) (CoverLetter, error) {
 	var cv CoverLetter
-	err := json.Unmarshal([]byte(data), &cv)
+	err := json.Unmarshal([]byte(jsonString), &cv)
 	if err != nil {
 		fmt.Println("Error parsing JSON:", err)
 		return cv, err
 	}
 
-	// Access and print the parsed values
-	fmt.Println("Applicant Full Name:", cv.ApplicantFullName)
-	fmt.Println("Company Name:", cv.CompanyName)
-	fmt.Println("Introduction:", cv.Introduction)
-	fmt.Println("Body:", cv.Body)
-
 	return cv, nil
-
 }
-
-// TODO:
-// - pass logger as dependency to NewGeminiClient OR functional options builder pattern `withLogger(logger logger)`
-// - implement delete file `defer client.DeleteFile(*ctx, resume.Name)``

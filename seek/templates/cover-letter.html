@@ -1,9 +1,10 @@
 {{ define "cover-letter" }}
 <div>
   <h1>Cover Letter</h1>
-  <p>Applicant Full Name: {{ .ApplicantFullName }}</p>
-  <p>Company Name: {{ .CompanyName }}</p>
-  <p>Introduction: {{ .Introduction }}</p>
-  <p>Body: {{ .Body }}</p>
+  <p>From: {{ .ApplicantFullName }}</p>
+  <p>To: {{ .CompanyName }}</p>
+  <hr />
+  <p>{{ .Introduction }}</p>
+  <p>{{ .Body }}</p>
 </div>
 {{ end }}

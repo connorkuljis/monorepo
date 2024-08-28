@@ -17,8 +17,7 @@ import (
 )
 
 // TODO: check if uri expired?
-// TODO: improve output structure (text/markdown/json)
-// TODO: include: fname, lname, contact and email in cv.
+// TODO: include: contact and email in cv.
 // TODO: stream results back with websockets
 
 const (
@@ -136,7 +135,7 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		return err
 	}
 
-	cv, err := gemini.NewCoverLetterFromJSON(gemini.ToString(resp))
+	cv, err := gemini.ParseCoverLetterJSON(gemini.ToString(resp))
 	if err != nil {
 		return err
 	}
@@ -147,7 +146,6 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "cover-letter", cv)
-	// return c.HTML(http.StatusOK, gemini.ToString(resp))
 }
 
 func (h *Handler) UploadFileHandler(c echo.Context) error {
@@ -171,7 +169,7 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	}
 	defer f.Close()
 
-	gf, err := h.G.UploadFile(f, nil)
+	gf, err := h.G.UploadFile(f, fileHeader.Filename, nil)
 	if err != nil {
 		return err
 	}
