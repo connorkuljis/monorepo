@@ -47,9 +47,6 @@ func main() {
 
 	store := sessions.NewCookieStore([]byte(SessionAuthKey))
 
-	// server.HandleFunc("/gen", generateContentHandler(g, store))
-	// server.HandleFunc("/upload", uploadFileHandler(g, store))
-
 	h := &Handler{g}
 
 	e := echo.New()
@@ -67,7 +64,6 @@ func main() {
 		g.Logger.Info("defaulting to port", "port", port)
 	}
 
-	// g.Logger.Info("started listening on port", "port", port)
 	err = e.Start(":" + port)
 	if err != nil {
 		g.Logger.Error("error listening an serving", "port", port, "message", err.Error())
@@ -93,26 +89,13 @@ func (h *Handler) IndexHandler(c echo.Context) error {
 func (h *Handler) GenerateContentHandler(c echo.Context) error {
 	sess, err := session.Get("session", c)
 	if err != nil {
-		// g.Logger.Error("error_getting_session", err)
-		// http.Error(w, "Internal server error", http.StatusInternalServerError)
-		// return
 		return err
 	}
 
 	uri, ok := sess.Values["uri"].(string)
 	if !ok {
-		// err := fmt.Errorf("invalid session: no value for 'uri'")
-		// g.Logger.Error("invalid_session", "missing_uri", err)
-		// http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
 	}
-
-	// err = r.ParseForm()
-	// if err != nil {
-	// 	g.Logger.Error("error_parsing_form", err)
-	// 	http.Error(w, "Bad request", http.StatusBadRequest)
-	// 	return
-	// }
 
 	jobDescription := c.FormValue("description")
 	if jobDescription == "" {
@@ -128,8 +111,6 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 
 	err = sessions.Save(c.Request(), c.Response())
 	if err != nil {
-		// g.Logger.Error("error_saving_session", err)
-		// http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return err
 	}
 
@@ -137,31 +118,17 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 }
 
 func (h *Handler) UploadFileHandler(c echo.Context) error {
-	// if r.Method != http.MethodPost {
-	// 	g.Logger.Warn("method_not_allowed", "expected_post")
-	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 	return
-	// }
-
 	sess, err := session.Get("session", c)
 	if err != nil {
-		// g.Logger.Error("Error getting session:", err)
-		// http.Error(w, "Session error", http.StatusInternalServerError)
 		return err
 	}
 
-	// fileHeader, fileHeader, err := r.FormFile("pdfFile")
 	fileHeader, err := c.FormFile("pdfFile")
 	if err != nil {
-		// g.Logger.Error("Error getting file:", err)
-		// http.Error(w, "File error", http.StatusBadRequest)
 		return err
 	}
-	// defer file.Close()
 
 	if filepath.Ext(fileHeader.Filename) != ".pdf" {
-		// g.Logger.Error("Invalid file format:", header.Filename)
-		// http.Error(w, "Only PDF files are allowed", http.StatusBadRequest)
 		return echo.NewHTTPError(http.StatusBadRequest, "only .pdf files are permited")
 	}
 
@@ -169,11 +136,10 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	gf, err := h.G.UploadFile(f, nil)
 	if err != nil {
-		// g.Logger.Error("Error uploading file:", err)
-		// http.Error(w, "Upload error", http.StatusInternalServerError)
 		return err
 	}
 
@@ -181,8 +147,6 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 
 	err = sessions.Save(c.Request(), c.Response())
 	if err != nil {
-		// g.Logger.Error("Error saving session:", err)
-		// http.Error(w, "Session error", http.StatusInternalServerError)
 		return err
 	}
 
