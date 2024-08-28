@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,18 +11,25 @@ import (
 	"google.golang.org/api/option"
 )
 
+type GeminiClient struct {
+	Client *genai.Client
+	Ctx    *context.Context
+	Logger *slog.Logger
+}
+
+type CoverLetter struct {
+	ApplicantFullName string `json:"applicant_full_name"`
+	CompanyName       string `json:"company_name"`
+	Introduction      string `json:"introduction"`
+	Body              string `json:"body"`
+}
+
 type Model int
 
 const (
 	Flash Model = iota
 	Pro
 )
-
-type GeminiClient struct {
-	Client *genai.Client
-	Ctx    *context.Context
-	Logger *slog.Logger
-}
 
 func NewGeminiClient(apiKey string, logger *slog.Logger) (*GeminiClient, error) {
 	ctx := context.Background()
@@ -61,6 +69,9 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai
 	}
 
 	m := g.Client.GenerativeModel(name)
+	m.GenerationConfig = genai.GenerationConfig{
+		ResponseMIMEType: "application/json",
+	}
 
 	resp, err := m.GenerateContent(*g.Ctx, prompt...)
 	if err != nil {
@@ -73,10 +84,18 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai
 }
 
 func ResumePromptWrapper(jobDescription string, uri string) []genai.Part {
-	defaultPrompt := "Please write a one-page cover letter for the job description and resume."
+	prompt := `Please write a cover letter using this JSON schema:
+        { "type": "object",
+          "properties": {
+              "applicant_full_name": { "type": "string" },
+              "company_name": { "type": "string" },
+              "introduction": { "type": "string" },
+              "body": { "type": "string" },
+         }
+        }`
 
 	parts := []genai.Part{
-		genai.Text(defaultPrompt),
+		genai.Text(prompt),
 		genai.Text(jobDescription),
 		genai.FileData{URI: uri},
 	}
@@ -84,14 +103,40 @@ func ResumePromptWrapper(jobDescription string, uri string) []genai.Part {
 	return parts
 }
 
-func ToString(response *genai.GenerateContentResponse) string {
+func ToString(resp *genai.GenerateContentResponse) string {
 	var result string
-	for _, c := range response.Candidates {
+	for _, c := range resp.Candidates {
 		for _, p := range c.Content.Parts {
 			result += fmt.Sprint(p)
 		}
 	}
+
+	// for _, c := range resp.Candidates {
+	// 	if c.Content != nil {
+	// 		// fmt.Println(*c.Content)
+	// 		result += fmt.Sprint(*c.Content)
+	// 	}
+	// }
+
 	return result
+}
+
+func NewCoverLetterFromJSON(data string) (CoverLetter, error) {
+	var cv CoverLetter
+	err := json.Unmarshal([]byte(data), &cv)
+	if err != nil {
+		fmt.Println("Error parsing JSON:", err)
+		return cv, err
+	}
+
+	// Access and print the parsed values
+	fmt.Println("Applicant Full Name:", cv.ApplicantFullName)
+	fmt.Println("Company Name:", cv.CompanyName)
+	fmt.Println("Introduction:", cv.Introduction)
+	fmt.Println("Body:", cv.Body)
+
+	return cv, nil
+
 }
 
 // TODO:

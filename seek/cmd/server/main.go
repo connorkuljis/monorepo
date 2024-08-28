@@ -16,8 +16,10 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// TODO: [ui] chose model option.
-// TODO: what happens if URI points to a deleted file? -> internal server error: do not have perms or deleted.
+// TODO: check if uri expired?
+// TODO: improve output structure (text/markdown/json)
+// TODO: include: fname, lname, contact and email in cv.
+// TODO: stream results back with websockets
 
 const (
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
@@ -134,12 +136,18 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		return err
 	}
 
+	cv, err := gemini.NewCoverLetterFromJSON(gemini.ToString(resp))
+	if err != nil {
+		return err
+	}
+
 	err = sessions.Save(c.Request(), c.Response())
 	if err != nil {
 		return err
 	}
 
-	return c.HTML(http.StatusOK, gemini.ToString(resp))
+	return c.Render(http.StatusOK, "cover-letter", cv)
+	// return c.HTML(http.StatusOK, gemini.ToString(resp))
 }
 
 func (h *Handler) UploadFileHandler(c echo.Context) error {
