@@ -2,7 +2,6 @@ package gemini
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -15,13 +14,6 @@ type GeminiClient struct {
 	Client *genai.Client
 	Ctx    *context.Context
 	Logger *slog.Logger
-}
-
-type CoverLetter struct {
-	ApplicantFullName string `json:"applicant_full_name"`
-	CompanyName       string `json:"company_name"`
-	Introduction      string `json:"introduction"`
-	Body              string `json:"body"`
 }
 
 type Model int
@@ -84,23 +76,12 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai
 	return resp, nil
 }
 
-func ResumePromptWrapper(jobDescription string, uri string) []genai.Part {
-	prompt := `Please write a cover letter using this JSON schema:
-        { "type": "object",
-          "properties": {
-              "applicant_full_name": { "type": "string" },
-              "company_name": { "type": "string" },
-              "introduction": { "type": "string" },
-              "body": { "type": "string" },
-         }
-        }`
-
+func ResumePromptWrapper(prompt, jobDescription, uri string) []genai.Part {
 	parts := []genai.Part{
 		genai.Text(prompt),
 		genai.Text(jobDescription),
 		genai.FileData{URI: uri},
 	}
-
 	return parts
 }
 
@@ -113,15 +94,4 @@ func ToString(resp *genai.GenerateContentResponse) string {
 	}
 
 	return result
-}
-
-func ParseCoverLetterJSON(jsonString string) (CoverLetter, error) {
-	var cv CoverLetter
-	err := json.Unmarshal([]byte(jsonString), &cv)
-	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
-		return cv, err
-	}
-
-	return cv, nil
 }

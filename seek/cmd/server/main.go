@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"html/template"
 	"io"
 	"log"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/connorkuljis/seek-js/internal/cv"
 	"github.com/connorkuljis/seek-js/internal/gemini"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/gorilla/sessions"
@@ -68,8 +71,9 @@ func main() {
 	e.Renderer = &Template{template.Must(template.ParseGlob("templates/*.html"))}
 
 	e.GET("/", h.IndexHandler)
-	e.POST("/gen", h.GenerateContentHandler)
 	e.POST("/upload", h.UploadFileHandler)
+	e.POST("/gen", h.GenerateContentHandler)
+	e.GET("/pdf/:id", h.GeneratePDF)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -105,57 +109,6 @@ func (h *Handler) IndexHandler(c echo.Context) error {
 	})
 }
 
-func (h *Handler) GenerateContentHandler(c echo.Context) error {
-	sess, err := session.Get("session", c)
-	if err != nil {
-		return err
-	}
-
-	uri, ok := sess.Values["uri"].(string)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
-	}
-
-	jobDescription := c.FormValue("description")
-	if jobDescription == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "empty form value for: `description`")
-	}
-
-	model := c.FormValue("model")
-	if err != nil {
-		return err
-	}
-
-	var targetModel gemini.Model
-	switch model {
-	case "gemini-1.5-flash":
-		targetModel = gemini.Flash
-	case "gemini-1.5-pro":
-		targetModel = gemini.Pro
-	default:
-		return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
-	}
-
-	p := gemini.ResumePromptWrapper(jobDescription, uri)
-
-	resp, err := h.G.GenerateContent(p, targetModel)
-	if err != nil {
-		return err
-	}
-
-	cv, err := gemini.ParseCoverLetterJSON(gemini.ToString(resp))
-	if err != nil {
-		return err
-	}
-
-	err = sessions.Save(c.Request(), c.Response())
-	if err != nil {
-		return err
-	}
-
-	return c.Render(http.StatusOK, "cover-letter", cv)
-}
-
 func (h *Handler) UploadFileHandler(c echo.Context) error {
 	sess, err := session.Get("session", c)
 	if err != nil {
@@ -184,7 +137,7 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	}
 
 	sess.Values["uri"] = gf.URI
-	sess.Values["filename"] = fileHeader.Filename
+	sess.Values["filename"] = gf.Name
 
 	err = sessions.Save(c.Request(), c.Response())
 	if err != nil {
@@ -192,4 +145,141 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusSeeOther, "/")
+}
+
+func (h *Handler) GenerateContentHandler(c echo.Context) error {
+	sess, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	uri, ok := sess.Values["uri"].(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
+	}
+
+	filename, ok := sess.Values["filename"].(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a filename")
+	}
+
+	jobDescription := c.FormValue("description")
+	if jobDescription == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "empty form value for: `description`")
+	}
+
+	model := c.FormValue("model")
+	if err != nil {
+		return err
+	}
+
+	var targetModel gemini.Model
+	switch model {
+	case "gemini-1.5-flash":
+		targetModel = gemini.Flash
+	case "gemini-1.5-pro":
+		targetModel = gemini.Pro
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
+	}
+
+	p := gemini.ResumePromptWrapper(cv.Prompt, jobDescription, uri)
+
+	resp, err := h.G.GenerateContent(p, targetModel)
+	if err != nil {
+		return err
+	}
+
+	coverLetter, err := cv.NewCoverLetterFromJSON(filename, gemini.ToString(resp))
+	if err != nil {
+		return err
+	}
+
+	// TODO: save this to some unique location
+	err = coverLetter.SaveAsHTML()
+	if err != nil {
+		return err
+	}
+
+	err = sessions.Save(c.Request(), c.Response())
+	if err != nil {
+		return err
+	}
+
+	return c.Render(http.StatusOK, "partial-cover-letter", coverLetter)
+}
+
+func (h *Handler) GeneratePDF(c echo.Context) error {
+	url := "http://127.0.0.1:3000/forms/chromium/convert/html"
+	id := c.Param("id")
+
+	filename := filepath.Join("out", id, "index.html")
+
+	_, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	// Open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Create a new multipart writer
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Create the form file
+	part, err := writer.CreateFormFile("files", filepath.Base(filename))
+	if err != nil {
+		return err
+	}
+
+	// Copy the file content to the form field
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return err
+	}
+
+	// Close the multipart writer
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
+
+	// Create the request
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return err
+	}
+
+	// Set the content type
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// Send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check the response status
+	if resp.StatusCode != http.StatusOK {
+		return err
+	}
+
+	// Set the appropriate headers for the PDF file
+	c.Response().Header().Set("Content-Type", "application/pdf")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=converted.pdf")
+
+	// Write the response body to the output file
+	_, err = io.Copy(c.Response(), resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
