@@ -3,14 +3,8 @@
 <html>
   {{ template "head" . }}
   <body>
-    <div>
-      <h1>Cover Letter</h1>
-      <p>From: {{ .ApplicantFullName }}</p>
-      <p>To: {{ .CompanyName }}</p>
-      <hr />
-      <p>{{ .Introduction }}</p>
-      <p>{{ .Body }}</p>
-    </div>
+    {{ template "component-cover-letter" . }}
+    <a href="/api/pdf/{{ .Filename }}">Generate PDF</a>
   </body>
 </html>
 {{ end }}

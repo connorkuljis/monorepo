@@ -1,0 +1,28 @@
+# Environment variable access
+GEMINIAPIKEY := env_var('GEMINIAPIKEY')  # Using env function to access environment variable
+
+default:
+  just --list
+
+dev:
+  reflex -s just local
+
+local:
+  # docker run -p 8080:8080 -e GEMINIAPIKEY=$GEMINIAPIKEY connorkuljis/seek:latest
+  go run cmd/server/main.go
+
+build:
+  docker buildx build --platform linux/amd64 -t connorkuljis/seek:latest .
+
+push: build
+  docker push connorkuljis/seek:latest
+
+deploy: push
+  gcloud run deploy seek-test-1 --image 'docker.io/connorkuljis/seek' --allow-unauthenticated --set-env-vars=GEMINIAPIKEY=$(GEMINIAPIKEY)
+
+status:
+  gcloud run services describe seek-test-1
+
+clean:
+  docker image prune -a && rm -f server 
+

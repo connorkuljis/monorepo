@@ -1,0 +1,47 @@
+{{ define "component-cover-letter" }}
+<div>
+  <table>
+    <tr>
+      <td>Name</td>
+      <td>{{ .ApplicantFullName }}</td>
+    </tr>
+    <tr>
+      <td>Application</td>
+      <td>Cover Letter</td>
+    </tr>
+    <tr>
+      <td>Job Title</td>
+      <td>{{ .JobTitle }}</td>
+    </tr>
+    <tr>
+      <td>Company</td>
+      <td>{{ .CompanyName }}</td>
+    </tr>
+    <tr>
+      <td>Date</td>
+      <td>{{ .Date.Format "Jan. 2, 2006" }}</td>
+    </tr>
+  </table>
+
+  <p>{{ .Introduction }}</p>
+  <p>Qualifications:</p>
+  <ul>
+    <li>{{ .Body.Qualification1 }}</li>
+    <li>{{ .Body.Qualification2 }}</li>
+    <li>{{ .Body.Qualification3 }}</li>
+  </ul>
+  <p>Experience:</p>
+  <ul>
+    <li>{{ .Body.Experience1 }}</li>
+    <li>{{ .Body.Experience2 }}</li>
+    <li>{{ .Body.Experience3 }}</li>
+  </ul>
+  <p>Skills:</p>
+  <ul>
+    {{ range .Body.Skills }}
+    <li>{{ . }}</li>
+    {{ end }}
+  </ul>
+  <p>{{ .Closing }}</p>
+</div>
+{{ end }}

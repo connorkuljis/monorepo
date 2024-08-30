@@ -1,11 +1,9 @@
 {{ define "partial-cover-letter" }}
-<div>
-  <h1>Cover Letter</h1>
-  <p>From: {{ .ApplicantFullName }}</p>
-  <p>To: {{ .CompanyName }}</p>
-  <hr />
-  <p>{{ .Introduction }}</p>
-  <p>{{ .Body }}</p>
-</div>
-<a href="/pdf/{{ .Filename }}">Generate PDF</a>
+<!doctype html>
+<html>
+  {{ template "head" . }}
+  <body>
+    {{ template "component-cover-letter" . }}
+  </body>
+</html>
 {{ end }}

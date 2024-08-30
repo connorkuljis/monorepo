@@ -20,9 +20,9 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// TODO: check if uri expired?
+// TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
+// TODO: name the pdf file with a formatted name, need db?
 // TODO: include: contact and email in cv.
-// TODO: stream results back with websockets
 
 const (
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
@@ -31,7 +31,7 @@ const (
 )
 
 type Handler struct {
-	G *gemini.GeminiClient
+	GClient *gemini.GeminiClient
 }
 
 type Template struct {
@@ -71,9 +71,10 @@ func main() {
 	e.Renderer = &Template{template.Must(template.ParseGlob("templates/*.html"))}
 
 	e.GET("/", h.IndexHandler)
+	e.GET("/upload", h.UploadHandler)
 	e.POST("/upload", h.UploadFileHandler)
-	e.POST("/gen", h.GenerateContentHandler)
-	e.GET("/pdf/:id", h.GeneratePDF)
+	e.POST("/api/gen", h.GenerateContentHandler)
+	e.GET("/api/pdf/:id", h.GeneratePDF)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -96,17 +97,27 @@ func (h *Handler) IndexHandler(c echo.Context) error {
 
 	uri, ok := sess.Values["uri"].(string)
 	if !ok {
-		// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
+		c.Redirect(http.StatusSeeOther, "/upload")
 	}
+
 	filename, ok := sess.Values["filename"].(string)
 	if !ok {
-		// TODO:
+		c.Redirect(http.StatusSeeOther, "/upload")
 	}
 
 	return c.Render(http.StatusOK, "index", map[string]string{
 		"URI":      uri,
 		"Filename": filename,
 	})
+}
+
+func (h *Handler) UploadHandler(c echo.Context) error {
+	_, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	return c.Render(http.StatusOK, "upload", nil)
 }
 
 func (h *Handler) UploadFileHandler(c echo.Context) error {
@@ -131,7 +142,7 @@ func (h *Handler) UploadFileHandler(c echo.Context) error {
 	defer f.Close()
 
 	opts := &genai.UploadFileOptions{DisplayName: fileHeader.Filename}
-	gf, err := h.G.UploadFile(f, "", opts)
+	gf, err := h.GClient.UploadFile(f, "", opts)
 	if err != nil {
 		return err
 	}
@@ -169,9 +180,6 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 	}
 
 	model := c.FormValue("model")
-	if err != nil {
-		return err
-	}
 
 	var targetModel gemini.Model
 	switch model {
@@ -179,13 +187,15 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		targetModel = gemini.Flash
 	case "gemini-1.5-pro":
 		targetModel = gemini.Pro
+	case "":
+		return echo.NewHTTPError(http.StatusBadRequest, "missing model")
 	default:
 		return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
 	}
 
 	p := gemini.ResumePromptWrapper(cv.Prompt, jobDescription, uri)
 
-	resp, err := h.G.GenerateContent(p, targetModel)
+	resp, err := h.GClient.GenerateContent(p, targetModel)
 	if err != nil {
 		return err
 	}
@@ -195,7 +205,6 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		return err
 	}
 
-	// TODO: save this to some unique location
 	err = coverLetter.SaveAsHTML()
 	if err != nil {
 		return err
@@ -206,76 +215,64 @@ func (h *Handler) GenerateContentHandler(c echo.Context) error {
 		return err
 	}
 
-	return c.Render(http.StatusOK, "partial-cover-letter", coverLetter)
+	return c.Render(http.StatusOK, "cover-letter", coverLetter)
 }
 
 func (h *Handler) GeneratePDF(c echo.Context) error {
-	url := "http://127.0.0.1:3000/forms/chromium/convert/html"
-	id := c.Param("id")
-
-	filename := filepath.Join("out", id, "index.html")
-
 	_, err := session.Get("session", c)
 	if err != nil {
 		return err
 	}
 
-	// Open the file
+	id := c.Param("id") // this is not safe btw
+
+	filename := filepath.Join("out", id, "index.html")
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// Create a new multipart writer
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// Create the form file
 	part, err := writer.CreateFormFile("files", filepath.Base(filename))
 	if err != nil {
 		return err
 	}
 
-	// Copy the file content to the form field
 	_, err = io.Copy(part, file)
 	if err != nil {
 		return err
 	}
 
-	// Close the multipart writer
 	err = writer.Close()
 	if err != nil {
 		return err
 	}
 
-	// Create the request
+	url := "http://127.0.0.1:3000/forms/chromium/convert/html"
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err
 	}
 
-	// Set the content type
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
-	// Check the response status
 	if resp.StatusCode != http.StatusOK {
 		return err
 	}
 
-	// Set the appropriate headers for the PDF file
 	c.Response().Header().Set("Content-Type", "application/pdf")
 	c.Response().Header().Set("Content-Disposition", "attachment; filename=converted.pdf")
 
-	// Write the response body to the output file
 	_, err = io.Copy(c.Response(), resp.Body)
 	if err != nil {
 		return err
