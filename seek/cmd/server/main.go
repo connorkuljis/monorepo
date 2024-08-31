@@ -15,13 +15,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
-// TODO: name the pdf file with a formatted name, need db?
-// TODO: include: contact and email in cv.
-
 const (
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
-	GeminiModelName string = "gemini-1.5-flash"
 	SessionAuthKey  string = "aaaaaaaaaaaaaa"
 )
 
@@ -33,6 +28,9 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
+// TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
+// TODO: name the pdf file with a formatted name, need db?
+// TODO: include: contact and email in cv.
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -58,26 +56,26 @@ func main() {
 
 	e := echo.New()
 
+	// middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(SessionAuthKey))))
 
+	// renderer
 	e.Renderer = &Template{template.Must(template.ParseGlob("templates/*.html"))}
 
+	// handler
 	h := handlers.Handler{
 		Logger:        logger,
 		GeminiService: g,
 	}
 
+	// routes
 	e.GET("/", h.IndexHandlerGet)
 	e.GET("/upload", h.UploadResumeGet)
 	e.POST("/upload", h.UploadResumePost)
 	e.POST("/api/gen", h.GenerateCoverLetterPost)
 	e.GET("/api/pdf/:id", h.CoverLetterPDFGet)
 
-	err = e.Start(":" + port)
-	if err != nil {
-		logger.Error("error listening an serving", "port", port, "message", err.Error())
-		os.Exit(1)
-	}
+	log.Fatal((e.Start(":" + port)))
 }
