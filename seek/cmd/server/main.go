@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/connorkuljis/seek-js/cmd/server/handlers"
 	"github.com/connorkuljis/seek-js/internal/gemini"
-	"github.com/connorkuljis/seek-js/internal/templates"
+	"github.com/connorkuljis/seek-js/internal/handler"
+	tr "github.com/connorkuljis/seek-js/internal/template_registry"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -68,14 +68,14 @@ func main() {
 	e.StaticFS("/", static)
 
 	// template registry
-	r, err := templates.NewTemplateRegistry(wwwroot, TemplatesDir)
+	r, err := tr.NewTemplateRegistry(wwwroot, TemplatesDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	e.Renderer = r
 
 	// handler
-	h := handlers.Handler{
+	h := handler.Handler{
 		Logger:        logger,
 		GeminiService: g,
 	}
