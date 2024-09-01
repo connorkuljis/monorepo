@@ -6,22 +6,33 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
+
+const PartialIdentifier = "partial-"
 
 // Implements the `echo.Renderer` interface
 type TemplateRegistry struct {
 	templates map[string]*template.Template
 }
 
+// this function provides a mechanism for rendering both full templates and partial templates based on their names.
+// The PartialIdentifier constant allows for flexible identification of partial templates, while the apply variable ensures that the correct target template is used for rendering.
 func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	apply := "base"
+
+	if strings.HasPrefix(name, PartialIdentifier) {
+		apply = strings.TrimPrefix(name, PartialIdentifier)
+	}
+
 	_, ok := t.templates[name]
 	if !ok {
 		return fmt.Errorf("Error, no template found for: %s\n", name)
 	}
 
-	return t.templates[name].ExecuteTemplate(w, "base", data)
+	return t.templates[name].ExecuteTemplate(w, apply, data)
 }
 
 func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error) {
@@ -66,7 +77,28 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 		},
 	}
 
+	partials := []Partial{
+		Partial{
+			Name: "partial-foo",
+			Components: []string{
+				filepath.Join(templateDir, "components/foo.html"),
+				filepath.Join(templateDir, "components/bar.html"),
+			},
+		},
+		Partial{
+			Name: "partial-bar",
+			Components: []string{
+				filepath.Join(templateDir, "components/bar.html"),
+			},
+		},
+	}
+
 	templates, err := LoadViews(templates, views, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	templates, err = LoadPartials(templates, partials, fs)
 	if err != nil {
 		return nil, err
 	}

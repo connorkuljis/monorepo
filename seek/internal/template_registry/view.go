@@ -10,6 +10,7 @@ type View struct {
 	Base       []string
 	Components []string
 	View       string
+	Funcs      template.FuncMap
 }
 
 func (v View) Parse(fs fs.FS) (*template.Template, error) {
@@ -19,7 +20,7 @@ func (v View) Parse(fs fs.FS) (*template.Template, error) {
 	ts = append(ts, v.Components...)
 	ts = append(ts, v.View)
 
-	t, err := template.ParseFS(fs, ts...)
+	t, err := template.New(v.Name).Funcs(v.Funcs).ParseFS(fs, ts...)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/connorkuljis/seek-js/internal/gemini"
@@ -86,6 +87,13 @@ func main() {
 	e.POST("/upload", h.UploadResumePost)
 	e.POST("/api/gen", h.GenerateCoverLetterPost)
 	e.GET("/api/pdf/:id", h.CoverLetterPDFGet)
+
+	e.GET("/foo", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "partial-foo", nil)
+	})
+	e.GET("/bar", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "partial-bar", nil)
+	})
 
 	log.Fatal((e.Start(":" + port)))
 }
