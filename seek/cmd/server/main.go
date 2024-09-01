@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"log"
 	"log/slog"
 	"os"
@@ -17,7 +19,13 @@ import (
 const (
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
 	SessionAuthKey  string = "aaaaaaaaaaaaaa"
+
+	StaticDir    = "wwwroot/static"
+	TemplatesDir = "wwwroot/templates"
 )
+
+//go:embed wwwroot
+var wwwroot embed.FS
 
 // TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
 // TODO: name the pdf file with a formatted name, need db?
@@ -52,7 +60,15 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(SessionAuthKey))))
 
-	r, err := templates.NewTemplateRegistry(os.DirFS("."))
+	// static content
+	static, err := fs.Sub(wwwroot, StaticDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	e.StaticFS("/", static)
+
+	// template registry
+	r, err := templates.NewTemplateRegistry(wwwroot, TemplatesDir)
 	if err != nil {
 		log.Fatal(err)
 	}

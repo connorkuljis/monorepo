@@ -60,11 +60,11 @@ func (h *Handler) GenerateCoverLetterPost(c echo.Context) error {
 
 	data := map[string]any{
 		"CoverLetter": coverLetter,
-		"Print":       true,
 	}
 
+	// render and save a seperate html file for printing as pdf
 	var buf bytes.Buffer
-	c.Echo().Renderer.Render(&buf, "cover-letter", data, c)
+	c.Echo().Renderer.Render(&buf, "cover-letter-print", data, c)
 	err = coverLetter.SaveAsHTML(buf.Bytes())
 	if err != nil {
 		return err
@@ -75,6 +75,5 @@ func (h *Handler) GenerateCoverLetterPost(c echo.Context) error {
 		return err
 	}
 
-	data["Print"] = false
 	return c.Render(http.StatusOK, "cover-letter", data)
 }
