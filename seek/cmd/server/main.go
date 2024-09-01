@@ -18,11 +18,14 @@ import (
 )
 
 const (
+	// environment variables
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
-	SessionAuthKey  string = "aaaaaaaaaaaaaa"
+	SessionAuthKey  string = "aaaaaaaaaaaaaa" // TODO: setup env var
+	GotenbergURL    string = "http://127.0.0.1:3000"
 
-	StaticDir    = "wwwroot/static"
-	TemplatesDir = "wwwroot/templates"
+	// wwwroot dirs
+	StaticDir    string = "wwwroot/static"
+	TemplatesDir string = "wwwroot/templates"
 )
 
 //go:embed wwwroot
@@ -68,17 +71,18 @@ func main() {
 	}
 	e.StaticFS("/", static)
 
-	// template registry
+	// setup template registry
 	r, err := tr.NewTemplateRegistry(wwwroot, TemplatesDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	e.Renderer = r
 
-	// handler
+	// inject deps into handler
 	h := handler.Handler{
-		Logger:        logger,
-		GeminiService: g,
+		Logger:              logger,
+		GeminiService:       g,
+		GotenbergServiceURL: GotenbergURL,
 	}
 
 	// routes

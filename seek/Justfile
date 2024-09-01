@@ -4,6 +4,9 @@ GEMINIAPIKEY := env_var('GEMINIAPIKEY')  # Using env function to access environm
 default:
   just --list
 
+gotenberg:
+  docker run -p 3000:3000 gotenberg/gotenberg:8
+
 dev:
   reflex -s just local
 

@@ -1,27 +1,10 @@
 {{ define "cover-letter" }}
-<div>
-  <table>
-    <tr>
-      <td>Name</td>
-      <td>{{ .ApplicantFullName }}</td>
-    </tr>
-    <tr>
-      <td>Application</td>
-      <td>Cover Letter</td>
-    </tr>
-    <tr>
-      <td>Job Title</td>
-      <td>{{ .JobTitle }}</td>
-    </tr>
-    <tr>
-      <td>Company</td>
-      <td>{{ .CompanyName }}</td>
-    </tr>
-    <tr>
-      <td>Date</td>
-      <td>{{ .Date.Format "Jan. 2, 2006" }}</td>
-    </tr>
-  </table>
+<article>
+  <h1>{{ .ApplicantFullName }}</h1>
+  <h2>Cover Letter</h2>
+  <p>{{ .JobTitle }}</p>
+  <p>{{ .CompanyName }}</p>
+  <p>{{ .Date.Format "Jan. 2, 2006" }}</p>
 
   <p>{{ .Introduction }}</p>
   <p>Qualifications:</p>
@@ -43,5 +26,5 @@
     {{ end }}
   </ul>
   <p>{{ .Closing }}</p>
-</div>
+</article>
 {{ end }}

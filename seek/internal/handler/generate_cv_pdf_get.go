@@ -46,7 +46,7 @@ func (h *Handler) CoverLetterPDFGet(c echo.Context) error {
 		return err
 	}
 
-	url := "http://127.0.0.1:3000/forms/chromium/convert/html"
+	url := h.GotenbergServiceURL + "/forms/chromium/convert/html"
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 )
 
 type Handler struct {
-	Logger        *slog.Logger
-	GeminiService *gemini.GeminiClient
+	Logger              *slog.Logger
+	GeminiService       *gemini.GeminiClient
+	GotenbergServiceURL string
 }
