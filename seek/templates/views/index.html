@@ -1,0 +1,56 @@
+{{ define "view" }}
+<main class="container">
+  <h1>Generate Cover Letter</h1>
+
+  <details open>
+    <summary>Resume details</summary>
+    <p>Using existing (cached) resume pdf.</p>
+    <table>
+      <tr>
+        <td>Filename</td>
+        <td>{{ .Filename }}</td>
+      </tr>
+      <tr>
+        <td>URI</td>
+        <td>{{ .URI }}</td>
+      </tr>
+    </table>
+  </details>
+
+  <section>
+    <form action="/api/gen" method="post">
+      <fieldset>
+        <label for="description">Enter Job Description</label>
+        <textarea id="description" name="description" rows="5" required>
+        </textarea>
+      </fieldset>
+
+      <fieldset>
+        <legend>Chose a model</legend>
+        <div class="grid">
+          <label
+            ><input
+              type="radio"
+              name="model"
+              value="gemini-1.5-flash"
+              checked
+            />
+            Gemini 1.5 Flash</label
+          >
+          <label
+            ><input type="radio" name="model" value="gemini-1.5-pro" /> Gemini
+            1.5 Pro</label
+          >
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <input type="submit" value="Submit" />
+        <span id="indicator" class="htmx-indicator" aria-busy="true"
+          >Generating your cover letter...</span
+        >
+      </fieldset>
+    </form>
+  </section>
+</main>
+{{ end }}

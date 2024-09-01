@@ -8,7 +8,6 @@ dev:
   reflex -s just local
 
 local:
-  # docker run -p 8080:8080 -e GEMINIAPIKEY=$GEMINIAPIKEY connorkuljis/seek:latest
   go run cmd/server/main.go
 
 build:
@@ -25,4 +24,3 @@ status:
 
 clean:
   docker image prune -a && rm -f server 
-

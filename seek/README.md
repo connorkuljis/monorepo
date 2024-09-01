@@ -16,9 +16,18 @@ Seek is a web-based application designed to automate the process of cover letter
 
 ## Build
 
-`make` - builds server and cli binaries
+`just local` - builds server
 
-`make deploy` - deploys to gcr.
+`just deploy` - deploys to cloud run service by building and pushing latest docker image
+
+
+## Dependencies 
+- [golang 1.23]
+- [docker]
+- [just]
+- [reflex]
+- [gcloud cli]
+
 
 ## Resources
 - [https://github.com/GoogleContainerTools/distroless](https://github.com/GoogleContainerTools/distroless)

@@ -1,12 +1,10 @@
 package cv
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"text/template"
 	"time"
 )
 
@@ -72,25 +70,17 @@ func NewCoverLetterFromJSON(filename, jsonString string) (CoverLetter, error) {
 		fmt.Println("Error parsing JSON:", err)
 		return cv, err
 	}
+
 	cv.Filename = filename
 	cv.Date = time.Now()
+
 	return cv, nil
 }
 
-func (cv *CoverLetter) SaveAsHTML() error {
-	t, err := template.New("").ParseFiles("templates/partial-cover-letter.html", "templates/head.html", "templates/component-cover-letter.html")
-	if err != nil {
-		return err
-	}
-
-	var buf bytes.Buffer
-	err = t.ExecuteTemplate(&buf, "partial-cover-letter", cv)
-	if err != nil {
-		return err
-	}
-
+func (cv *CoverLetter) SaveAsHTML(html []byte) error {
 	path := filepath.Join("out", cv.Filename)
-	err = os.MkdirAll(path, os.ModePerm)
+
+	err := os.MkdirAll(path, os.ModePerm)
 
 	filename := filepath.Join(path, "index.html")
 	f, err := os.Create(filename)
@@ -98,7 +88,7 @@ func (cv *CoverLetter) SaveAsHTML() error {
 		return err
 	}
 
-	_, err = f.Write(buf.Bytes())
+	_, err = f.Write(html)
 	if err != nil {
 		return err
 	}

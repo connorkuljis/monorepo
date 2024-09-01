@@ -1,14 +1,13 @@
 package main
 
 import (
-	"html/template"
-	"io"
 	"log"
 	"log/slog"
 	"os"
 
 	"github.com/connorkuljis/seek-js/cmd/server/handlers"
 	"github.com/connorkuljis/seek-js/internal/gemini"
+	"github.com/connorkuljis/seek-js/internal/templates"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -19,14 +18,6 @@ const (
 	EnvGeminiAPIKey string = "GEMINIAPIKEY"
 	SessionAuthKey  string = "aaaaaaaaaaaaaa"
 )
-
-type Template struct {
-	templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
 
 // TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
 // TODO: name the pdf file with a formatted name, need db?
@@ -61,8 +52,11 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(SessionAuthKey))))
 
-	// renderer
-	e.Renderer = &Template{template.Must(template.ParseGlob("templates/*.html"))}
+	r, err := templates.NewTemplateRegistry(os.DirFS("."))
+	if err != nil {
+		log.Fatal(err)
+	}
+	e.Renderer = r
 
 	// handler
 	h := handlers.Handler{

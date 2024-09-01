@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"net/http"
 
 	"github.com/connorkuljis/seek-js/internal/cv"
@@ -57,7 +58,14 @@ func (h *Handler) GenerateCoverLetterPost(c echo.Context) error {
 		return err
 	}
 
-	err = coverLetter.SaveAsHTML()
+	data := map[string]any{
+		"CoverLetter": coverLetter,
+		"Print":       true,
+	}
+
+	var buf bytes.Buffer
+	c.Echo().Renderer.Render(&buf, "cover-letter", data, c)
+	err = coverLetter.SaveAsHTML(buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -67,5 +75,6 @@ func (h *Handler) GenerateCoverLetterPost(c echo.Context) error {
 		return err
 	}
 
-	return c.Render(http.StatusOK, "cover-letter", coverLetter)
+	data["Print"] = false
+	return c.Render(http.StatusOK, "cover-letter", data)
 }
