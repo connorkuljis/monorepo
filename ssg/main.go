@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 	Save(t)
-	Serve()
+	// Serve()
 }
 
 func ConvertPostsToHTML() ([]*template.Template, error) {
@@ -62,6 +62,8 @@ func ConvertPostsToHTML() ([]*template.Template, error) {
 				fmt.Println("Error parsing template:", err)
 				continue
 			}
+			w := os.Stdout
+			t.ExecuteTemplate(w, "base", nil)
 
 			tpls = append(tpls, t)
 		}
