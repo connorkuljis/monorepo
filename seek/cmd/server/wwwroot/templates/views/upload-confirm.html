@@ -1,0 +1,19 @@
+{{ define "view" }}
+<section>
+  <article>
+    <header>
+      <h2>Confirmation</h2>
+    </header>
+    <p>Your resume has been successfully uploaded.</p>
+    <p>You can use it every time you generate a cover letter.</p>
+    <p>It will be deleted after 2 days</p>
+    <ul>
+      <li>{{ .URI }}</li>
+      <li>{{ .Filename }}</li>
+    </ul>
+    <footer>
+      <a href="/"><button>Go to generate a cover letter</button></a>
+    </footer>
+  </article>
+</section>
+{{ end }}

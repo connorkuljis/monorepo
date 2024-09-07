@@ -1,56 +1,61 @@
 {{ define "view" }}
-<main class="container">
-  <h1>Generate Cover Letter</h1>
+<section>
+  <h2>Generate Cover Letter</h2>
+  <!-- Generate Form -->
+  <form hx-post="/generate">
+    <fieldset>
+      <label for="place">Place where you found the job*</label>
+      <input type="text" name="place" id="place" value="{{ .Place }}" />
 
-  <details open>
-    <summary>Resume details</summary>
-    <p>Using existing (cached) resume pdf.</p>
-    <table>
-      <tr>
-        <td>Filename</td>
-        <td>{{ .Filename }}</td>
-      </tr>
-      <tr>
-        <td>URI</td>
-        <td>{{ .URI }}</td>
-      </tr>
-    </table>
-  </details>
+      <label for="email">Your email</label>
+      <input type="text" name="email" id="email" value="{{ .Email }}" />
 
-  <section>
-    <form action="/api/gen" method="post">
-      <fieldset>
-        <label for="description">Enter Job Description</label>
-        <textarea id="description" name="description" rows="5" required>
-        </textarea>
-      </fieldset>
+      <label for="phone">Your phone number</label>
+      <input type="text" name="phone" id="phone" value="{{ .Phone }}" />
 
-      <fieldset>
-        <legend>Chose a model</legend>
-        <div class="grid">
-          <label
-            ><input
-              type="radio"
-              name="model"
-              value="gemini-1.5-flash"
-              checked
-            />
-            Gemini 1.5 Flash</label
-          >
-          <label
-            ><input type="radio" name="model" value="gemini-1.5-pro" /> Gemini
-            1.5 Pro</label
-          >
-        </div>
-      </fieldset>
+      <label for="description">Job Description</label>
+      <textarea id="description" name="description" rows="5" required>
+      </textarea>
 
-      <fieldset>
-        <input type="submit" value="Submit" />
-        <span id="indicator" class="htmx-indicator" aria-busy="true"
-          >Generating your cover letter...</span
+      <legend>Chose a model</legend>
+      <div class="grid">
+        <label
+          ><input type="radio" name="model" value="gemini-1.5-flash" checked />
+          Gemini 1.5 Flash</label
         >
-      </fieldset>
-    </form>
-  </section>
-</main>
+        <label
+          ><input type="radio" name="model" value="gemini-1.5-pro" /> Gemini 1.5
+          Pro</label
+        >
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <button type="submit" aria-busy="false">Submit</button>
+    </fieldset>
+  </form>
+  <!-- Generate Form -->
+
+  <script>
+    $(document).ready(function () {
+      // This code automatically positions the cursor at the beginning of the
+      // first line in a textarea element whenever the user focuses on it.
+      $("textarea").focus(function () {
+        this.selectionStart = 0;
+        this.selectionEnd = 0;
+      });
+
+      $("form").submit(function () {
+        $('button[type="submit"]').attr("aria-busy", "true");
+      });
+    });
+
+    // Check if the page is being restored from the browser's back/forward cache
+    $(window).on("pageshow", function (event) {
+      if (event.originalEvent.persisted) {
+        $('button[type="submit"]').attr("aria-busy", "false");
+      }
+    });
+  </script>
+</section>
 {{ end }}

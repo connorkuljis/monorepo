@@ -76,15 +76,6 @@ func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai
 	return resp, nil
 }
 
-func ResumePromptWrapper(prompt, jobDescription, uri string) []genai.Part {
-	parts := []genai.Part{
-		genai.Text(prompt),
-		genai.Text(jobDescription),
-		genai.FileData{URI: uri},
-	}
-	return parts
-}
-
 func ToString(resp *genai.GenerateContentResponse) string {
 	var result string
 	for _, c := range resp.Candidates {

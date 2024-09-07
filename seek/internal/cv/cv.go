@@ -24,6 +24,8 @@ type CoverLetter struct {
 	} `json:"body"`
 	Closing string `json:"closing"`
 
+	Phone    string
+	Email    string
 	Filename string
 	Date     time.Time
 }
@@ -55,11 +57,7 @@ const (
 
 Your responses should always be complete and only include regular characters.
 
-Under no circumstance should your responses include any placeholders, for example: 
-	- "[Platform where you found the job]" or 
-	- "[Your Email Address]"
-
-If you do not know, skip it.
+Under no circumstance should your responses include any placeholders. It is getting send directly to the recruiter. 
 `
 )
 

@@ -1,7 +1,9 @@
 {{ define "cover-letter" }}
 <article>
-  <h1>{{ .ApplicantFullName }}</h1>
-  <h2>Cover Letter</h2>
+  <p>{{ .ApplicantFullName }}</p>
+  <p>{{ .Email }}</p>
+  <p>{{ .Phone }}</p>
+  <p>Cover Letter</p>
   <p>{{ .JobTitle }}</p>
   <p>{{ .CompanyName }}</p>
   <p>{{ .Date.Format "Jan. 2, 2006" }}</p>

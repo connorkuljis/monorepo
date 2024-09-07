@@ -86,11 +86,12 @@ func main() {
 	}
 
 	// routes
-	e.GET("/", h.IndexHandlerGet)
-	e.GET("/upload", h.UploadResumeGet)
-	e.POST("/upload", h.UploadResumePost)
-	e.POST("/api/gen", h.GenerateCoverLetterPost)
-	e.GET("/api/pdf/:id", h.CoverLetterPDFGet)
+	e.GET("/generate", h.GeneratePageGet)
+	e.POST("/generate", h.GeneratePagePost)
+	e.GET("/upload", h.UploadPageGet)
+	e.POST("/upload", h.UploadPagePost)
+	e.GET("/upload/confirm", h.ConfirmationPage)
+	// e.GET("/api/pdf/:id", h.CoverLetterPDFGet)
 
 	e.GET("/foo", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "partial-foo", nil)

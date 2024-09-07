@@ -1,3 +1,6 @@
 {{ define "layout" }}
-<main class="container">{{ template "view" . }}</main>
+<body>
+  {{ template "header" . }}
+  <main class="container">{{ template "view" . }}</main>
+</body>
 {{ end }}

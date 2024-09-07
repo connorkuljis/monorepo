@@ -1,0 +1,40 @@
+{{ define "upload-modal"}}
+<!-- Modal -->
+<section id="modal">
+  <h2>Upload Resume</h2>
+  <button
+    class="contrast"
+    data-target="modal-example"
+    onclick="toggleModal(event)"
+  >
+    Upload
+  </button>
+</section>
+<!-- ./ Modal -->
+
+<!-- Modal example -->
+<dialog id="modal-example">
+  <article>
+    <header>
+      <button
+        aria-label="Close"
+        rel="prev"
+        data-target="modal-example"
+        onclick="toggleModal(event)"
+      ></button>
+      <h3>Upload Resume</h3>
+    </header>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <label>Upload your resume (.pdf)</label>
+      <fieldset role="group">
+        <input type="file" name="pdfFile" accept=".pdf" required />
+        <input type="submit" value="upload" />
+      </fieldset>
+    </form>
+  </article>
+</dialog>
+<!-- ./ Modal example -->
+
+<!-- Modal -->
+<script src="js/modal.js"></script>
+{{ end }}

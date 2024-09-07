@@ -42,6 +42,7 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 		filepath.Join(templateDir, "base.html"),
 		filepath.Join(templateDir, "head.html"),
 		filepath.Join(templateDir, "layout.html"),
+		filepath.Join(templateDir, "components/header.html"),
 	}
 
 	views := []View{
@@ -49,11 +50,19 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 			Name: "index",
 			Base: base,
 			View: filepath.Join(templateDir, "views/index.html"),
+			Components: []string{
+				filepath.Join(templateDir, "components/upload-modal.html"),
+			},
 		},
 		View{
 			Name: "upload",
 			Base: base,
 			View: filepath.Join(templateDir, "views/upload.html"),
+		},
+		View{
+			Name: "upload-confirm",
+			Base: base,
+			View: filepath.Join(templateDir, "views/upload-confirm.html"),
 		},
 		View{
 			Name: "cover-letter",

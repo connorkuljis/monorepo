@@ -10,7 +10,40 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) UploadResumePost(c echo.Context) error {
+func (h *Handler) UploadPageGet(c echo.Context) error {
+	_, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	return c.Render(http.StatusOK, "upload", nil)
+}
+
+func (h *Handler) ConfirmationPage(c echo.Context) error {
+	sess, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	uri, ok := sess.Values["uri"].(string)
+	if !ok {
+		// c.Redirect(http.StatusSeeOther, "/upload")
+	}
+
+	filename, ok := sess.Values["filename"].(string)
+	if !ok {
+		// c.Redirect(http.StatusSeeOther, "/upload")
+	}
+
+	data := map[string]any{
+		"URI":      uri,
+		"Filename": filename,
+	}
+
+	return c.Render(http.StatusOK, "upload-confirm", data)
+}
+
+func (h *Handler) UploadPagePost(c echo.Context) error {
 	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
@@ -45,5 +78,5 @@ func (h *Handler) UploadResumePost(c echo.Context) error {
 		return err
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/")
+	return c.Redirect(http.StatusSeeOther, "/upload/confirm")
 }
