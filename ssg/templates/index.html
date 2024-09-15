@@ -1,0 +1,11 @@
+{{ define "content" }}
+<ul>
+  {{ range .Posts }} {{ template "post" . }} {{ end }}
+</ul>
+{{ end }}
+
+<!-- post -->
+{{ define "post" }}
+<li><a href="/posts/{{ .Filename }}">{{ .Matter.Name}}</a></li>
+<p>{{ .Matter.Date }}</p>
+{{ end }}
