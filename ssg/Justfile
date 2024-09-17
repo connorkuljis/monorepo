@@ -4,5 +4,10 @@ run:
 serve:
     go run main.go -serve
 
+dev:
+    reflex -s just serve
+
+    
+
 clean:
     rm -rf public/
