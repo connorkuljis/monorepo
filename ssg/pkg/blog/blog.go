@@ -1,7 +1,9 @@
 package blog
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -13,6 +15,7 @@ const (
 	PublicDir = "public"
 	PostsDir  = "posts"
 	SourceDir = "posts"
+	StaticDir = "static"
 )
 
 type Blog struct {
@@ -33,19 +36,23 @@ func NewBlog() (Blog, error) {
 }
 
 func (b *Blog) Init() error {
-	err := os.MkdirAll(b.PublicPostsDir, os.ModePerm)
+	err := os.RemoveAll(b.PublicDir)
 	if err != nil {
-		if os.IsExist(err) {
-			fmt.Printf("Directory %s already exists\n", b.PublicPostsDir)
+		return err
+	}
+
+	err = os.MkdirAll(b.PublicPostsDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.CopyFS(b.PublicDir, os.DirFS(StaticDir))
+	if err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			fmt.Printf("Directory %s already exists\n", StaticDir)
 		} else {
 			return err
 		}
-	}
-
-	// copy static into public
-	err = os.CopyFS(b.PublicDir, os.DirFS("static"))
-	if err != nil {
-		return err
 	}
 
 	return nil

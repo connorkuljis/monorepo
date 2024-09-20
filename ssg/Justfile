@@ -1,5 +1,5 @@
 build:
-    go build .
+    go build -o ./dist/ssg ./cmd/ssg/main.go
 
 generate:
     ./ssg
@@ -8,5 +8,5 @@ serve:
     ./ssg -serve
 
 clean:
-    rm -rf ./ssg ./public
+    rm -rf ./dist/ssg ./public
         
