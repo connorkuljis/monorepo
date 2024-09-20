@@ -16,9 +16,6 @@ import (
 
 const (
 	TimeFormat = time.RFC3339
-	PublicDir  = "public"
-	PostsDir   = "posts"
-	SourceDir  = "posts"
 )
 
 func main() {

@@ -42,6 +42,12 @@ func (b *Blog) Init() error {
 		}
 	}
 
+	// copy static into public
+	err = os.CopyFS(b.PublicDir, os.DirFS("static"))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
