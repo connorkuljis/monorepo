@@ -2,9 +2,28 @@
 <!doctype html>
 <html>
   <head>
-    <link rel="stylesheet" href="css/styles.css" type="text/css" />
+    <style>
+      :root {
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.5;
+        font-size: 150%;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 64rem;
+        padding: 2rem;
+      }
+      table {
+        overflow: auto;
+      }
+    </style>
   </head>
   <body>
+    <header>
+      <h1>Strength through Joy</h1>
+      <nav><a href="/">home</a></nav>
+    </header>
     {{ template "content" . }}
   </body>
 </html>

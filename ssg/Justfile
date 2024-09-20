@@ -1,13 +1,12 @@
-run:
-    go run main.go
+build:
+    go build .
+
+generate:
+    ./ssg
 
 serve:
-    go run main.go -serve
-
-dev:
-    reflex -s just serve
-
-    
+    ./ssg -serve
 
 clean:
-    rm -rf public/
+    rm -rf ./ssg ./public
+        

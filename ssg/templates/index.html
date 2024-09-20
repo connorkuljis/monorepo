@@ -1,11 +1,33 @@
 {{ define "content" }}
-<ul>
-  {{ range .Posts }} {{ template "post" . }} {{ end }}
-</ul>
+<section id="posts">
+  <h2>Posts</h2>
+  <div class="posts-flex">
+    {{ range .Posts }} {{ template "post-item" . }} {{ end }}
+  </div>
+</section>
+<style>
+  .posts-flex {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .post-item {
+    border: 1px solid black;
+    padding: 1rem;
+    border-radius: 1rem;
+    display: flex;
+
+    & .title {
+      flex: 1;
+    }
+  }
+</style>
 {{ end }}
 
-<!-- post -->
-{{ define "post" }}
-<li><a href="/posts/{{ .Filename }}">{{ .Matter.Name}}</a></li>
-<p>{{ .Matter.Date }}</p>
+<!-- post-item -->
+{{ define "post-item" }}
+<a class="post-item" href="/posts/{{ .Dist }}">
+  <div class="title">{{ .Matter.Name }}</div>
+  <div>{{ .Matter.Date.Format "2006 01 02" }}</div>
+</a>
 {{ end }}

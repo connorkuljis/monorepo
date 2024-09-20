@@ -1,4 +1,4 @@
 {{ define "content" }}
-<article>{{ .Body }}</article>
-<footer>{{ .Matter.Date }}</footer>
+<article>{{ .HTML }}</article>
+<footer>{{ .Matter.Date.Format "2006 01 02" }}</footer>
 {{ end }}
