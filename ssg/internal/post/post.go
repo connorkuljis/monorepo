@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/adrg/frontmatter"
-	"github.com/connorkuljis/monorepo/ssg/pkg/matter"
+	"github.com/connorkuljis/monorepo/ssg/internal/matter"
 	"github.com/russross/blackfriday/v2"
 )
 
-const base = "base"
+const root = "root"
 
 type Post struct {
 	Length  int
@@ -53,12 +53,16 @@ func (p *Post) Render(path string) error {
 	}
 	defer f.Close()
 
-	t, err := template.New(p.Dist).ParseFiles("templates/base.html", "templates/post.html")
+	t, err := template.New(p.Dist).ParseFiles(
+		"templates/layout.html",
+		"templates/head.html",
+		"templates/view/post.html",
+	)
 	if err != nil {
 		return err
 	}
 
-	err = t.ExecuteTemplate(f, base, p)
+	err = t.ExecuteTemplate(f, root, p)
 	if err != nil {
 		return err
 	}

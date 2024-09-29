@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,8 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/connorkuljis/monorepo/ssg/pkg/blog"
-	"github.com/connorkuljis/monorepo/ssg/pkg/matter"
+	"github.com/connorkuljis/monorepo/ssg/internal/blog"
+	"github.com/connorkuljis/monorepo/ssg/internal/matter"
+	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -19,19 +19,40 @@ const (
 )
 
 func main() {
-	serve := flag.Bool("serve", false, "serve the public files, if not passed by default build is run")
-	new := flag.Bool("new", false, "make a new post")
-	flag.Parse()
+	app := &cli.App{
+		Commands: []*cli.Command{
+			{
+				Name:    "generate",
+				Aliases: []string{"gen", "g"},
+				Usage:   "generates site html and css into `/public`",
+				Action: func(cCtx *cli.Context) error {
+					BuildBlogCommand()
+					return nil
+				},
+			},
+			{
+				Name:    "serve",
+				Aliases: []string{"server", "s"},
+				Usage:   "serves the static content in `/public`",
+				Action: func(cCtx *cli.Context) error {
+					ServeCommand()
+					return nil
+				},
+			},
+			{
+				Name:    "new",
+				Aliases: []string{"n"},
+				Usage:   "creates a new markdown post",
+				Action: func(cCtx *cli.Context) error {
+					NewPostCommand()
+					return nil
+				},
+			},
+		},
+	}
 
-	if *serve {
-		ServeCommand()
-		return
-	} else if *new {
-		NewPostCommand()
-		return
-	} else {
-		BuildBlogCommand()
-		return
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -41,32 +62,39 @@ func BuildBlogCommand() error {
 		return err
 	}
 
+	fmt.Println("Initialising blog...")
 	err = blog.Init()
 	if err != nil {
 		log.Fatal("error:", err.Error())
 	}
 
+	fmt.Println("Building posts...")
 	err = blog.BuildPosts()
 	if err != nil {
 		log.Fatal("error:", err.Error())
 	}
+	fmt.Println("Built", len(blog.Posts), "posts")
 
+	fmt.Println("Building home page...")
 	err = blog.BuildHomePage()
 	if err != nil {
 		log.Fatal("error:", err.Error())
 	}
 
-	err = blog.Save()
+	fmt.Println("Saving blog...")
+	n, err := blog.Save()
 	if err != nil {
 		log.Fatal("error:", err.Error())
 	}
+	fmt.Println("Published", n, "/", len(blog.Posts), "posts")
 
+	fmt.Println("Done!")
 	return nil
 }
 
 func NewPostCommand() {
 	if len(os.Args) <= 2 {
-		log.Fatal(errors.New("missing name"))
+		log.Fatal(errors.New("missing argument, please provide a title."))
 	}
 
 	name := os.Args[2]
@@ -81,13 +109,15 @@ func NewPostCommand() {
 		Date: time.Now(),
 	}
 
-	s := fmt.Sprintf(`
+	header := `
 ---
 name: %s
 date: %s
 draft: %s
 ---
-`,
+`
+	s := fmt.Sprintf(
+		header,
 		matter.Name,
 		matter.Date.Format(TimeFormat),
 		"true",

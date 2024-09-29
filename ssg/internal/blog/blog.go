@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/connorkuljis/monorepo/ssg/pkg/post"
+	"github.com/connorkuljis/monorepo/ssg/internal/post"
 )
 
 const (
@@ -79,9 +79,7 @@ func (b *Blog) BuildPosts() error {
 				return err
 			}
 
-			if !post.Matter.Draft {
-				posts = append(posts, post)
-			}
+			posts = append(posts, post)
 		}
 	}
 
@@ -93,7 +91,11 @@ func (b *Blog) BuildPosts() error {
 func (b *Blog) BuildHomePage() error {
 	filename := "index.html"
 
-	t, err := template.New(filename).ParseFiles("templates/base.html", "templates/index.html")
+	t, err := template.New(filename).ParseFiles(
+		"templates/layout.html",
+		"templates/head.html",
+		"templates/view/index.html",
+	)
 	if err != nil {
 		return err
 	}
@@ -103,25 +105,30 @@ func (b *Blog) BuildHomePage() error {
 	return nil
 }
 
-func (b *Blog) Save() error {
+func (b *Blog) Save() (int, error) {
+	var count int
+
 	filename := "index.html"
 	f, err := os.Create(filepath.Join(b.PublicDir, filename))
 	if err != nil {
-		return err
+		return count, err
 	}
 	defer f.Close()
 
-	err = b.IndexPage.ExecuteTemplate(f, "base", map[string]any{"Posts": b.Posts})
+	err = b.IndexPage.ExecuteTemplate(f, "root", map[string]any{"Posts": b.Posts})
 	if err != nil {
-		return err
+		return count, err
 	}
 
 	for _, post := range b.Posts {
-		err := post.Render(b.PublicPostsDir)
-		if err != nil {
-			return err
+		if !post.Matter.Draft {
+			err := post.Render(b.PublicPostsDir)
+			if err != nil {
+				return count, err
+			}
+			count++
 		}
 	}
 
-	return nil
+	return count, nil
 }

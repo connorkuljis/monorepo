@@ -1,15 +1,13 @@
-{{ define "base" }}
+{{ define "root" }}
 <!doctype html>
 <html>
-  <head>
-    <link rel="stylesheet" type="text/css" href="../css/styles.css" />
-  </head>
-  <body>
+  {{ template "head" . }}
+  <body class="container">
     <header>
       <h1>Strength through Joy</h1>
       <nav><a href="/">home</a></nav>
     </header>
-    {{ template "content" . }}
+    <main>{{ template "content" . }}</main>
   </body>
 </html>
 {{ end }}

@@ -1,0 +1,14 @@
+{{ define "content" }}
+<section id="posts">
+  <h2>Posts</h2>
+  <ul>
+    {{ range .Posts }} {{ if not .Matter.Draft }} {{ template "post-item" . }}
+    {{ end}} {{ end }}
+  </ul>
+</section>
+{{ end }}
+
+<!-- post-item -->
+{{ define "post-item" }}
+<li><a class="post-item" href="/posts/{{ .Dist }}"> {{ .Matter.Name }} </a></li>
+{{ end }}

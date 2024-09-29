@@ -2,10 +2,10 @@ build:
     go build -o ./dist/ssg ./cmd/ssg/main.go
 
 generate:
-    ./ssg
+    ./dist/ssg generate
 
-serve:
-    ./ssg -serve
+serve: generate
+    ./dist/ssg serve
 
 clean:
     rm -rf ./dist/ssg ./public
