@@ -131,7 +131,6 @@ draft: %s
 
 func ServeCommand() {
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	fmt.Println("Server listening on port 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
