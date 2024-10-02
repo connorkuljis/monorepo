@@ -15,15 +15,14 @@ import (
 const root = "root"
 
 type Post struct {
-	Length  int
-	Preview string
-	Dist    string
-
-	HTML   template.HTML
-	Matter matter.Matter
+	Length   int
+	Preview  string
+	Filename string
+	HTML     template.HTML
+	Matter   matter.Matter
 }
 
-func NewPost(content []byte) (Post, error) {
+func ParsePost(content []byte) (Post, error) {
 	var matter matter.Matter
 	rest, err := frontmatter.Parse(strings.NewReader(string(content)), &matter)
 	if err != nil {
@@ -36,24 +35,24 @@ func NewPost(content []byte) (Post, error) {
 	}
 
 	p := Post{
-		Length:  len(rest),
-		Preview: string(rest[:100]),
-		Dist:    matter.Name + ".html",
-		HTML:    template.HTML(blackfriday.Run(rest)),
-		Matter:  matter,
+		Length:   len(rest),
+		Preview:  string(rest[:100]),
+		Filename: matter.Name + ".html",
+		HTML:     template.HTML(blackfriday.Run(rest)),
+		Matter:   matter,
 	}
 
 	return p, nil
 }
 
 func (p *Post) Render(path string) error {
-	f, err := os.Create(filepath.Join(path, p.Dist))
+	f, err := os.Create(filepath.Join(path, p.Filename))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	t, err := template.New(p.Dist).ParseFiles(
+	t, err := template.New(p.Filename).ParseFiles(
 		"templates/layout.html",
 		"templates/head.html",
 		"templates/view/post.html",
@@ -71,7 +70,7 @@ func (p *Post) Render(path string) error {
 }
 
 func (p *Post) PPrint() {
-	fmt.Println(p.Dist)
+	fmt.Println(p.Filename)
 	fmt.Println("\tName:", p.Matter.Name)
 	fmt.Println("\tDate:", p.Matter.Date)
 	fmt.Println("\tDraft:", p.Matter.Draft)

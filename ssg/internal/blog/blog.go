@@ -74,7 +74,7 @@ func (b *Blog) BuildPosts() error {
 				return err
 			}
 
-			post, err := post.NewPost(bytes)
+			post, err := post.ParsePost(bytes)
 			if err != nil {
 				return err
 			}
@@ -108,6 +108,7 @@ func (b *Blog) BuildHomePage() error {
 func (b *Blog) Save() (int, error) {
 	var count int
 
+	// 1. render the home page
 	filename := "index.html"
 	f, err := os.Create(filepath.Join(b.PublicDir, filename))
 	if err != nil {
@@ -120,6 +121,7 @@ func (b *Blog) Save() (int, error) {
 		return count, err
 	}
 
+	// 2. for each post that is not a draft, render the post
 	for _, post := range b.Posts {
 		if !post.Matter.Draft {
 			err := post.Render(b.PublicPostsDir)

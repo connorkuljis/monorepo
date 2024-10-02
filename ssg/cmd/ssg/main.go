@@ -26,7 +26,10 @@ func main() {
 				Aliases: []string{"gen", "g"},
 				Usage:   "generates site html and css into `/public`",
 				Action: func(cCtx *cli.Context) error {
-					BuildBlogCommand()
+					err := BuildBlogCommand()
+					if err != nil {
+						return err
+					}
 					return nil
 				},
 			},
@@ -65,26 +68,26 @@ func BuildBlogCommand() error {
 	fmt.Println("Initialising blog...")
 	err = blog.Init()
 	if err != nil {
-		log.Fatal("error:", err.Error())
+		return err
 	}
 
 	fmt.Println("Building posts...")
 	err = blog.BuildPosts()
 	if err != nil {
-		log.Fatal("error:", err.Error())
+		return err
 	}
 	fmt.Println("Built", len(blog.Posts), "posts")
 
 	fmt.Println("Building home page...")
 	err = blog.BuildHomePage()
 	if err != nil {
-		log.Fatal("error:", err.Error())
+		return err
 	}
 
 	fmt.Println("Saving blog...")
 	n, err := blog.Save()
 	if err != nil {
-		log.Fatal("error:", err.Error())
+		return err
 	}
 	fmt.Println("Published", n, "/", len(blog.Posts), "posts")
 
