@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -101,7 +102,8 @@ func NewPostCommand() {
 	}
 
 	name := os.Args[2]
-	f, err := os.Create(filepath.Join("posts", name+".md"))
+	filename := filepath.Join("posts", name+".md")
+	f, err := os.Create(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,6 +131,26 @@ draft: %s
 	_, err = f.WriteString(s)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// editor env var
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		log.Fatal("Error: $EDITOR not set!")
+	}
+
+	// open file with editor
+	cmd := exec.Command(editor, filename)
+
+	// echo exec command
+	fmt.Println("exec:", cmd.String())
+
+	// set the process output to the os output
+	cmd.Stdout = os.Stdout
+
+	// run the command
+	if err = cmd.Run(); err != nil {
+		log.Println(err)
 	}
 }
 
