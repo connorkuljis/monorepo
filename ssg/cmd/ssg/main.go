@@ -26,8 +26,17 @@ func main() {
 				Name:    "generate",
 				Aliases: []string{"gen", "g"},
 				Usage:   "generates site html and css into `/public`",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:     "include-drafts",
+						Usage:    "include drafts",
+						Required: false,
+						Aliases:  []string{"d"},
+					},
+				},
 				Action: func(cCtx *cli.Context) error {
-					err := BuildBlogCommand()
+					includeDrafts := cCtx.Bool("include-drafts")
+					err := BuildBlogCommand(includeDrafts)
 					if err != nil {
 						return err
 					}
@@ -60,8 +69,8 @@ func main() {
 	}
 }
 
-func BuildBlogCommand() error {
-	blog, err := blog.NewBlog()
+func BuildBlogCommand(includeDrafts bool) error {
+	blog, err := blog.NewBlog(includeDrafts)
 	if err != nil {
 		return err
 	}

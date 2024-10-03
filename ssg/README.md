@@ -22,5 +22,5 @@ To create a new post:
 
 todo items:
 
-- [] show drafts mode
+- [x] show drafts mode
 - [x] open file with $EDITOR when new post command

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"text/template"
 
 	"github.com/connorkuljis/monorepo/ssg/internal/post"
@@ -21,18 +22,18 @@ const (
 type Blog struct {
 	PublicDir      string
 	PublicPostsDir string
+	EnableDrafts   bool
 
 	IndexPage *template.Template
 	Posts     []post.Post
 }
 
-func NewBlog() (Blog, error) {
-	var blog Blog
-
-	blog.PublicDir = PublicDir
-	blog.PublicPostsDir = filepath.Join(PublicDir, PostsDir)
-
-	return blog, nil
+func NewBlog(enableDrafts bool) (Blog, error) {
+	return Blog{
+		PublicDir:      PublicDir,
+		PublicPostsDir: filepath.Join(PublicDir, PostsDir),
+		EnableDrafts:   enableDrafts,
+	}, nil
 }
 
 func (b *Blog) Init() error {
@@ -79,11 +80,19 @@ func (b *Blog) BuildPosts() error {
 				return err
 			}
 
-			posts = append(posts, post)
+			if !post.Matter.Draft || b.EnableDrafts {
+				posts = append(posts, post)
+			}
+
 		}
 	}
 
 	b.Posts = posts
+
+	// Sort the slice by date
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].Matter.Date.After(posts[j].Matter.Date)
+	})
 
 	return nil
 }
@@ -121,15 +130,12 @@ func (b *Blog) Save() (int, error) {
 		return count, err
 	}
 
-	// 2. for each post that is not a draft, render the post
 	for _, post := range b.Posts {
-		if !post.Matter.Draft {
-			err := post.Render(b.PublicPostsDir)
-			if err != nil {
-				return count, err
-			}
-			count++
+		err := post.Render(b.PublicPostsDir)
+		if err != nil {
+			return count, err
 		}
+		count++
 	}
 
 	return count, nil
