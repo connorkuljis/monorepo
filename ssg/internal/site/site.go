@@ -54,17 +54,17 @@ func (s *Site) BundleStaticContentToPublicDir() error {
 // 2. For each file entry, check if it is a markdown file.
 // 3. If it is a markdown file, open the file and read the contents into a sequence of bytes.
 // 4. Parse the bytes to a blog post struct and exctract the post matter and content body.
-// 5. Convert the markdown body to html.
-// 6.
-func (s *Site) ParseMarkdownPosts() error {
-	files, err := os.ReadDir("posts")
+// 5. Convert the markdown content body to html.
+// 6. Append each blog to a slice of blogs
+// 7. Sort the slice of blogs by most recent date.
+func (s *Site) LoadAllBlogPages() error {
+	files, err := os.ReadDir(util.PostsDir)
 	if err != nil {
 		return err
 	}
 
 	var blogPages []*BlogPage
 	for _, file := range files {
-		// parse the markdown files in the /posts directory
 		path := filepath.Join(util.SourceDir, file.Name())
 		if filepath.Ext(path) == ".md" {
 			bytes, err := os.ReadFile(path)
@@ -104,35 +104,31 @@ func (s *Site) BuildHomePage() error {
 }
 
 // Genereate generates the static html
-func (site *Site) Generate() (int, error) {
-	var count int
-
+func (site *Site) Generate() error {
 	for _, blogPage := range site.BlogPages {
 		filename := filepath.Join("public", "posts", blogPage.Slug)
 		f, err := os.Create(filename)
 		if err != nil {
-			return count, err
+			return err
 		}
 		defer f.Close()
 
 		err = blogPage.Generate(f)
 		if err != nil {
-			return count, err
+			return err
 		}
-		count++
 	}
 
 	filename := filepath.Join("public", site.HomePage.Filename)
 	f, err := os.Create(filename)
 	if err != nil {
-		return count, err
+		return err
 	}
 	defer f.Close()
 	err = site.HomePage.Generate(f)
 	if err != nil {
-		return count, err
+		return err
 	}
-	count++
 
-	return count, nil
+	return nil
 }

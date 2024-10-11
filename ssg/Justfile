@@ -1,15 +1,15 @@
 build:
-    go build -o ./dist/ssg ./cmd/ssg/main.go
+    go build -o ./bin/ssg ./cmd/ssg/main.go
 
 generate: build
-    ./dist/ssg generate -d
+    ./bin/ssg generate -d
 
 serve: build
-    ./dist/ssg serve
+    ./bin/ssg serve
 
 install: build
-    sudo cp ./dist/ssg /usr/local/bin/ssg
+    sudo cp ./bin/ssg /usr/local/bin/ssg
 
 clean:
-    rm -rf ./dist/ssg ./public
+    rm -rf ./bin/ssg ./public
         

@@ -21,12 +21,14 @@ var GenerateCommand = cli.Command{
 	},
 	Action: func(cCtx *cli.Context) error {
 		includeDrafts := cCtx.Bool("include-drafts")
+
 		fmt.Println("Initialising site...")
 		site, err := site.NewSite(includeDrafts)
 		if err != nil {
 			return err
 		}
 
+		// create the skeleton
 		err = site.CreateNewPublicDir()
 		if err != nil {
 			return err
@@ -37,12 +39,11 @@ var GenerateCommand = cli.Command{
 			return err
 		}
 
-		fmt.Println("Parsing posts...")
-		err = site.ParseMarkdownPosts()
+		fmt.Println("Loading blog pages...")
+		err = site.LoadAllBlogPages()
 		if err != nil {
 			return err
 		}
-		fmt.Println("Built", len(site.BlogPages), "posts")
 
 		fmt.Println("Building home page...")
 		err = site.BuildHomePage()
@@ -51,11 +52,10 @@ var GenerateCommand = cli.Command{
 		}
 
 		fmt.Println("Saving blog...")
-		n, err := site.Generate()
+		err = site.Generate()
 		if err != nil {
 			return err
 		}
-		fmt.Println("Published", n, "/", len(site.BlogPages), "posts")
 
 		fmt.Println("Done!")
 

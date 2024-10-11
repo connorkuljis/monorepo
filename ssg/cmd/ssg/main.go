@@ -9,15 +9,19 @@ import (
 )
 
 func main() {
-	app := &cli.App{
+	app := start()
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func start() *cli.App {
+	return &cli.App{
 		Commands: []*cli.Command{
 			&command.GenerateCommand,
 			&command.ServeCommand,
 			&command.NewPostCommand,
 		},
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
 	}
 }
