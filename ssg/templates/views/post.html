@@ -17,7 +17,6 @@
 {{ define "details" }}
 <div class="details">
   <p>{{ .Post.Created.Format "January 02 2006" }}</p>
-  <p>{{ .Post.Length }} characters</p>
   <span>
     {{ range $tag := .Post.Tags }}
     <u>{{ $tag }}</u>

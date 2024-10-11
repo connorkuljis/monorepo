@@ -14,6 +14,27 @@ const (
 	StaticDir = "static"
 )
 
+const (
+	root            = "templates/root.html"
+	layout          = "templates/layout.html"
+	head            = "templates/head.html"
+	componentHeader = "templates/components/header.html"
+	viewPost        = "templates/views/post.html"
+	viewIndex       = "templates/views/index.html"
+)
+
+func defaultRootTemplates() []string {
+	return []string{root, layout, head, componentHeader}
+}
+
+func HomePageTemplates() []string {
+	return append(defaultRootTemplates(), viewIndex)
+}
+
+func BlogPageTemplates() []string {
+	return append(defaultRootTemplates(), viewPost)
+}
+
 func Slugify(s string) string {
 	// Normalize the string to decompose combined characters
 	s = norm.NFKD.String(s)

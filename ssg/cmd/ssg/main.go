@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/connorkuljis/monorepo/ssg/internal"
+	"github.com/connorkuljis/monorepo/ssg/internal/site"
 	"github.com/urfave/cli/v2"
 )
 
@@ -67,7 +67,7 @@ func main() {
 
 func BuildBlogCommand(includeDrafts bool) error {
 	fmt.Println("Initialising site...")
-	site, err := internal.NewSite(includeDrafts)
+	site, err := site.NewSite(includeDrafts)
 	if err != nil {
 		return err
 	}
