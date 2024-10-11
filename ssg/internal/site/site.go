@@ -19,8 +19,8 @@ type Site struct {
 	HomePage  *HomePage
 }
 
-func NewSite(enableDrafts bool) (Site, error) {
-	return Site{EnableDrafts: enableDrafts}, nil
+func NewSite(enableDrafts bool) *Site {
+	return &Site{EnableDrafts: enableDrafts}
 }
 
 // CreateNewPublicDir force creates a new empty /public directory.
@@ -58,13 +58,14 @@ func (s *Site) BundleStaticContentToPublicDir() error {
 // 6. Append each blog to a slice of blogs
 // 7. Sort the slice of blogs by most recent date.
 func (s *Site) LoadAllBlogPages() error {
-	files, err := os.ReadDir(util.PostsDir)
+	files, err := os.ReadDir("posts")
 	if err != nil {
 		return err
 	}
 
 	var blogPages []*BlogPage
 	for _, file := range files {
+		// parse the markdown files in the /posts directory
 		path := filepath.Join(util.SourceDir, file.Name())
 		if filepath.Ext(path) == ".md" {
 			bytes, err := os.ReadFile(path)

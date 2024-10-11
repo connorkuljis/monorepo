@@ -23,13 +23,10 @@ var GenerateCommand = cli.Command{
 		includeDrafts := cCtx.Bool("include-drafts")
 
 		fmt.Println("Initialising site...")
-		site, err := site.NewSite(includeDrafts)
-		if err != nil {
-			return err
-		}
+		site := site.NewSite(includeDrafts)
 
 		// create the skeleton
-		err = site.CreateNewPublicDir()
+		err := site.CreateNewPublicDir()
 		if err != nil {
 			return err
 		}
