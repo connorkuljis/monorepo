@@ -2,8 +2,10 @@ package site
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/adrg/frontmatter"
@@ -65,4 +67,16 @@ func (p *BlogPage) Validate() error {
 	}
 
 	return nil
+}
+
+func (p *BlogPage) Matter() string {
+	var builder strings.Builder
+
+	builder.WriteString("---\n")
+	builder.WriteString(fmt.Sprintf("name: %s\n", p.Title))
+	builder.WriteString(fmt.Sprintf("date: %s\n", p.Created.Format(util.TimeFormat)))
+	builder.WriteString("draft: true\n")
+	builder.WriteString("---")
+
+	return builder.String()
 }

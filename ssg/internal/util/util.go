@@ -3,6 +3,7 @@ package util
 import (
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -21,6 +22,10 @@ const (
 	componentHeader = "templates/components/header.html"
 	viewPost        = "templates/views/post.html"
 	viewIndex       = "templates/views/index.html"
+)
+
+const (
+	TimeFormat = time.RFC3339
 )
 
 func defaultRootTemplates() []string {
