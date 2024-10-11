@@ -1,0 +1,27 @@
+{{ define "view" }}
+<article>
+  <div class="wrapper grid">
+    <div class="grid-col-4">{{ template "title" . }}</div>
+    <div class="grid-col-3">{{ .Post.Content }}</div>
+    <div class="grid-col-1">{{ template "details" . }}</div>
+  </div>
+</article>
+{{ end }}
+
+<!-- title -->
+{{ define "title" }}
+<h2 class="title">{{ .Post.Title }}</h2>
+{{ end }}
+
+<!-- details -->
+{{ define "details" }}
+<div class="details">
+  <p>{{ .Post.Created.Format "January 02 2006" }}</p>
+  <p>{{ .Post.Length }} characters</p>
+  <span>
+    {{ range $tag := .Post.Tags }}
+    <u>{{ $tag }}</u>
+    {{ end }}
+  </span>
+</div>
+{{ end }}

@@ -24,3 +24,4 @@ todo items:
 
 - [x] show drafts mode
 - [x] open file with $EDITOR when new post command
+- [ ] command to initalise a blog with static and a populated* templates folder

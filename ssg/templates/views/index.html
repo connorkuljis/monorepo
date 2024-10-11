@@ -1,0 +1,22 @@
+{{ define "view" }}
+<section id="posts">
+  <div class="wrapper">
+    <h2>Posts</h2>
+    <table>
+      <tbody>
+        {{ range .Posts }} {{ template "post-item" . }} {{ end }}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{ end }}
+
+<!-- post-item -->
+{{ define "post-item" }}
+<tr>
+  <td>{{ .Created.Format "January 02, 2006" }}</td>
+  <td>
+    <a class="post-item" href="/posts/{{ .Filename }}"> {{ .Title}} </a>
+  </td>
+</tr>
+{{ end }}

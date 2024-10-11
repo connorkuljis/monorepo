@@ -7,6 +7,9 @@ generate: build
 serve: build
     ./dist/ssg serve
 
+install: build
+    sudo cp ./dist/ssg /usr/local/bin/ssg
+
 clean:
     rm -rf ./dist/ssg ./public
         

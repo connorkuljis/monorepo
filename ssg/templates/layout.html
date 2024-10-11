@@ -1,13 +1,3 @@
-{{ define "root" }}
-<!doctype html>
-<html>
-  {{ template "head" . }}
-  <body class="container">
-    <header>
-      <h1>Strength through Joy</h1>
-      <nav><a href="/">home</a></nav>
-    </header>
-    <main>{{ template "content" . }}</main>
-  </body>
-</html>
+{{ define "layout" }} {{ template "header" . }}
+<main>{{ template "view" . }}</main>
 {{ end }}

@@ -1,17 +1,13 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"time"
 
-	"github.com/connorkuljis/monorepo/ssg/internal/blog"
-	"github.com/connorkuljis/monorepo/ssg/internal/matter"
+	"github.com/connorkuljis/monorepo/ssg/internal"
 	"github.com/urfave/cli/v2"
 )
 
@@ -52,15 +48,15 @@ func main() {
 					return nil
 				},
 			},
-			{
-				Name:    "new",
-				Aliases: []string{"n"},
-				Usage:   "creates a new markdown post",
-				Action: func(cCtx *cli.Context) error {
-					NewPostCommand()
-					return nil
-				},
-			},
+			// {
+			// 	Name:    "new",
+			// 	Aliases: []string{"n"},
+			// 	Usage:   "creates a new markdown post",
+			// 	Action: func(cCtx *cli.Context) error {
+			// 		NewPostCommand()
+			// 		return nil
+			// 	},
+			// },
 		},
 	}
 
@@ -70,98 +66,104 @@ func main() {
 }
 
 func BuildBlogCommand(includeDrafts bool) error {
-	blog, err := blog.NewBlog(includeDrafts)
+	fmt.Println("Initialising site...")
+	site, err := internal.NewSite(includeDrafts)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Initialising blog...")
-	err = blog.Init()
+	err = site.CreateNewPublicDir()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Building posts...")
-	err = blog.BuildPosts()
+	err = site.BundleStaticContentToPublicDir()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Built", len(blog.Posts), "posts")
+
+	fmt.Println("Parsing posts...")
+	err = site.ParseMarkdownPosts()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Built", len(site.BlogPages), "posts")
 
 	fmt.Println("Building home page...")
-	err = blog.BuildHomePage()
+	err = site.BuildHomePage()
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Saving blog...")
-	n, err := blog.Save()
+	n, err := site.Generate()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Published", n, "/", len(blog.Posts), "posts")
+	fmt.Println("Published", n, "/", len(site.BlogPages), "posts")
 
 	fmt.Println("Done!")
 	return nil
 }
 
-func NewPostCommand() {
-	if len(os.Args) <= 2 {
-		log.Fatal(errors.New("missing argument, please provide a title."))
-	}
+// func NewPostCommand() {
+// 	if len(os.Args) <= 2 {
+// 		log.Fatal(errors.New("missing argument, please provide a title."))
+// 	}
 
-	name := os.Args[2]
-	filename := filepath.Join("posts", name+".md")
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
+// 	name := os.Args[2]
+// 	name = util.Slugify(name)
+// 	filename := filepath.Join("posts", name+".md")
+// 	f, err := os.Create(filename)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer f.Close()
 
-	matter := matter.Matter{
-		Name: name,
-		Date: time.Now(),
-	}
+// 	matter := matter.Matter{
+// 		Title:   name,
+// 		Created: time.Now(),
+// 	}
 
-	header := `
----
-name: %s
-date: %s
-draft: %s
----
-`
-	s := fmt.Sprintf(
-		header,
-		matter.Name,
-		matter.Date.Format(TimeFormat),
-		"true",
-	)
+// 	header := `
+// ---
+// name: %s
+// date: %s
+// draft: %s
+// ---
+// `
+// 	s := fmt.Sprintf(
+// 		header,
+// 		matter.Title,
+// 		matter.Created.Format(TimeFormat),
+// 		"true",
+// 	)
 
-	_, err = f.WriteString(s)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	_, err = f.WriteString(s)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	// editor env var
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		log.Fatal("Error: $EDITOR not set!")
-	}
+// 	// editor env var
+// 	editor := os.Getenv("EDITOR")
+// 	if editor == "" {
+// 		log.Fatal("Error: $EDITOR not set!")
+// 	}
 
-	// open file with editor
-	cmd := exec.Command(editor, filename)
+// 	// open file with editor
+// 	cmd := exec.Command(editor, filename)
 
-	// echo exec command
-	fmt.Println("exec:", cmd.String())
+// 	// echo exec command
+// 	fmt.Println("exec:", cmd.String())
 
-	// set the process output to the os output
-	cmd.Stdout = os.Stdout
+// 	// set the process output to the os output
+// 	cmd.Stdout = os.Stdout
 
-	// run the command
-	if err = cmd.Run(); err != nil {
-		log.Println(err)
-	}
-}
+// 	// run the command
+// 	if err = cmd.Run(); err != nil {
+// 		log.Println(err)
+// 	}
+// }
 
 func ServeCommand() {
 	http.Handle("/", http.FileServer(http.Dir("public")))
