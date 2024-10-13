@@ -6,10 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/connorkuljis/monorepo/ssg/internal/site"
-	"github.com/connorkuljis/monorepo/ssg/internal/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,23 +16,19 @@ var NewPostCommand = cli.Command{
 	Aliases: []string{"n"},
 	Usage:   "creates a new markdown post",
 	Action: func(cCtx *cli.Context) error {
-		name := cCtx.Args().First()
-		if name == "" {
+		title := cCtx.Args().First()
+		if title == "" {
 			return fmt.Errorf("please provide a name")
 		}
 
-		name = util.Slugify(name)
-		filename := filepath.Join("posts", name+".md")
+		page := site.NewBlogPage(title)
+
+		filename := filepath.Join("posts", page.Slug+".md")
 		f, err := os.Create(filename)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer f.Close()
-
-		page := site.BlogPage{
-			Title:   name,
-			Created: time.Now(),
-		}
 
 		_, err = f.WriteString(page.Matter())
 		if err != nil {

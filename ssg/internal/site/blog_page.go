@@ -23,6 +23,16 @@ type BlogPage struct {
 	Draft   bool      `yaml:"draft"`
 }
 
+func NewBlogPage(title string) *BlogPage {
+	now := time.Now()
+	slug := now.Format("2006-01-02") + "-" + util.Slugify(title)
+	return &BlogPage{
+		Slug:    slug,
+		Title:   title,
+		Created: now,
+	}
+}
+
 func ParsePage(r io.Reader) (*BlogPage, error) {
 	// marshall the front matter
 	var page BlogPage
@@ -73,8 +83,8 @@ func (p *BlogPage) Matter() string {
 	var builder strings.Builder
 
 	builder.WriteString("---\n")
-	builder.WriteString(fmt.Sprintf("name: %s\n", p.Title))
-	builder.WriteString(fmt.Sprintf("date: %s\n", p.Created.Format(util.TimeFormat)))
+	builder.WriteString(fmt.Sprintf("title: %s\n", p.Title))
+	builder.WriteString(fmt.Sprintf("created: %s\n", p.Created.Format(util.TimeFormat)))
 	builder.WriteString("draft: true\n")
 	builder.WriteString("---")
 
