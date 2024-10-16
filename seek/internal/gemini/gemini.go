@@ -16,51 +16,33 @@ type GeminiClient struct {
 	Logger *slog.Logger
 }
 
-type Model int
-
-const (
-	Flash Model = iota
-	Pro
-)
-
-func NewGeminiClient(apiKey string, logger *slog.Logger) (*GeminiClient, error) {
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+func NewClient(ctx *context.Context, apiKey string, logger *slog.Logger) (*GeminiClient, error) {
+	client, err := genai.NewClient(*ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, err
 	}
 
-	g := &GeminiClient{
+	return &GeminiClient{
 		Client: client,
-		Ctx:    &ctx,
+		Ctx:    ctx,
 		Logger: logger,
-	}
-
-	return g, nil
+	}, nil
 }
 
-func (g *GeminiClient) UploadFile(r io.Reader, filename string, opts *genai.UploadFileOptions) (*genai.File, error) {
-	f, err := g.Client.UploadFile(*g.Ctx, filename, r, opts)
+func (gc *GeminiClient) UploadFile(r io.Reader, filename string, opts *genai.UploadFileOptions) (*genai.File, error) {
+	f, err := gc.Client.UploadFile(*gc.Ctx, filename, r, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	g.Logger.Info("Uploaded file", "name", f.Name, "uri", f.URI)
+	gc.Logger.Info("Uploaded file", "name", f.Name, "uri", f.URI)
 
 	return f, nil
 }
 
 // Generate content using the prompt.
-func (g *GeminiClient) GenerateContent(prompt []genai.Part, model Model) (*genai.GenerateContentResponse, error) {
-	var name string
-	switch model {
-	case Flash:
-		name = "gemini-1.5-flash"
-	case Pro:
-		name = "gemini-1.5-pro"
-	}
-
-	m := g.Client.GenerativeModel(name)
+func (g *GeminiClient) GenerateContent(prompt []genai.Part, model string) (*genai.GenerateContentResponse, error) {
+	m := g.Client.GenerativeModel(model)
 
 	m.GenerationConfig = genai.GenerationConfig{
 		ResponseMIMEType: "application/json",

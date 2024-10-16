@@ -11,43 +11,78 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const PartialIdentifier = "partial-"
+const (
+	DefaultRenderTarget = "base"
+	PartialIdentifier   = "partial-"
+)
 
 // Implements the `echo.Renderer` interface
 type TemplateRegistry struct {
 	templates map[string]*template.Template
 }
 
+// A View consists of a name and a series of filenames for html components such as base, components and view as well as a template.FuncMap
+type View struct {
+	Name       string // Name of the view eg: index.html
+	Base       []string
+	Components []string
+	View       string
+	Funcs      template.FuncMap
+}
+
 // this function provides a mechanism for rendering both full templates and partial templates based on their names.
 // The PartialIdentifier constant allows for flexible identification of partial templates, while the apply variable ensures that the correct target template is used for rendering.
 func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	apply := "base"
-
-	if strings.HasPrefix(name, PartialIdentifier) {
-		apply = strings.TrimPrefix(name, PartialIdentifier)
-	}
-
+	// check if valid template name
 	_, ok := t.templates[name]
 	if !ok {
 		return fmt.Errorf("Error, no template found for: %s\n", name)
 	}
 
-	return t.templates[name].ExecuteTemplate(w, apply, data)
+	// eg: partial-table.html
+	isPartial := strings.HasPrefix(name, PartialIdentifier)
+	if isPartial {
+		partialRenderTarget := strings.TrimPrefix(name, PartialIdentifier)
+		return t.templates[name].ExecuteTemplate(w, partialRenderTarget, data)
+	}
+
+	return t.templates[name].ExecuteTemplate(w, DefaultRenderTarget, data)
 }
 
 func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error) {
-	templates := make(map[string]*template.Template)
+	views := getDefinedViews(templateDir)
 
-	base := []string{
+	templateMap := make(map[string]*template.Template)
+
+	for _, v := range views {
+		name := v.Name
+		tpl, err := template.New(name).Funcs(v.Funcs).ParseFS(fs, v.Filenames()...)
+		if err != nil {
+			return nil, err
+		}
+		templateMap[name] = tpl
+	}
+
+	return &TemplateRegistry{
+		templates: templateMap,
+	}, nil
+}
+
+func getBaseLayout(templateDir string) []string {
+	return []string{
 		filepath.Join(templateDir, "base.html"),
 		filepath.Join(templateDir, "head.html"),
 		filepath.Join(templateDir, "layout.html"),
 		filepath.Join(templateDir, "components/header.html"),
 	}
+}
 
-	views := []View{
+func getDefinedViews(templateDir string) []View {
+	base := getBaseLayout(templateDir)
+
+	return []View{
 		View{
-			Name: "index",
+			Name: "index.html",
 			Base: base,
 			View: filepath.Join(templateDir, "views/index.html"),
 			Components: []string{
@@ -55,17 +90,17 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 			},
 		},
 		View{
-			Name: "upload",
+			Name: "upload.html",
 			Base: base,
 			View: filepath.Join(templateDir, "views/upload.html"),
 		},
 		View{
-			Name: "upload-confirm",
+			Name: "upload-confirm.html",
 			Base: base,
 			View: filepath.Join(templateDir, "views/upload-confirm.html"),
 		},
 		View{
-			Name: "cover-letter",
+			Name: "cover-letter.html",
 			Base: base,
 			View: filepath.Join(templateDir, "views/cover-letter.html"),
 			Components: []string{
@@ -73,7 +108,7 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 			},
 		},
 		View{
-			Name: "cover-letter-print",
+			Name: "cover-letter-print.html",
 			Base: []string{
 				filepath.Join(templateDir, "base.html"),
 				filepath.Join(templateDir, "head.html"),
@@ -85,36 +120,13 @@ func NewTemplateRegistry(fs fs.FS, templateDir string) (*TemplateRegistry, error
 			},
 		},
 	}
+}
 
-	partials := []Partial{
-		Partial{
-			Name: "partial-foo",
-			Components: []string{
-				filepath.Join(templateDir, "components/foo.html"),
-				filepath.Join(templateDir, "components/bar.html"),
-			},
-		},
-		Partial{
-			Name: "partial-bar",
-			Components: []string{
-				filepath.Join(templateDir, "components/bar.html"),
-			},
-		},
-	}
-
-	templates, err := LoadViews(templates, views, fs)
-	if err != nil {
-		return nil, err
-	}
-
-	templates, err = LoadPartials(templates, partials, fs)
-	if err != nil {
-		return nil, err
-	}
-
-	tr := &TemplateRegistry{
-		templates: templates,
-	}
-
-	return tr, nil
+// Returns the filenames of all the base files, components and the view filename
+func (v *View) Filenames() []string {
+	var filenames []string
+	filenames = append(filenames, v.Base...)
+	filenames = append(filenames, v.Components...)
+	filenames = append(filenames, v.View)
+	return filenames
 }

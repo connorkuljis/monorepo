@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"bytes"
@@ -12,16 +12,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) CoverLetterPDFGet(c echo.Context) error {
+func (s *Server) CoverLetterPDFGet(c echo.Context) error {
 	_, err := session.Get("session", c)
 	if err != nil {
 		return err
 	}
 
-	id := c.Param("id") // this is not safe btw
+	id := c.Param("id") // TODO: prevent unauthorised access to another users resume id
 
 	filename := filepath.Join("out", id, "index.html")
-
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -46,7 +45,7 @@ func (h *Handler) CoverLetterPDFGet(c echo.Context) error {
 		return err
 	}
 
-	url := h.GotenbergServiceURL + "/forms/chromium/convert/html"
+	url := s.GotenbergServiceURL + "/forms/chromium/convert/html"
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err

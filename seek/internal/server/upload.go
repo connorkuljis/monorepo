@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"net/http"
@@ -10,16 +10,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) UploadPageGet(c echo.Context) error {
+func (s *Server) UploadPageGet(c echo.Context) error {
 	_, err := session.Get("session", c)
 	if err != nil {
 		return err
 	}
 
-	return c.Render(http.StatusOK, "upload", nil)
+	return c.Render(http.StatusOK, "upload.html", nil)
 }
 
-func (h *Handler) ConfirmationPage(c echo.Context) error {
+func (s *Server) ConfirmationPage(c echo.Context) error {
 	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
@@ -40,10 +40,10 @@ func (h *Handler) ConfirmationPage(c echo.Context) error {
 		"Filename": filename,
 	}
 
-	return c.Render(http.StatusOK, "upload-confirm", data)
+	return c.Render(http.StatusOK, "upload-confirm.html", data)
 }
 
-func (h *Handler) UploadPagePost(c echo.Context) error {
+func (s *Server) UploadPagePost(c echo.Context) error {
 	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (h *Handler) UploadPagePost(c echo.Context) error {
 	defer f.Close()
 
 	opts := &genai.UploadFileOptions{DisplayName: fileHeader.Filename}
-	gf, err := h.GeminiService.UploadFile(f, "", opts)
+	gf, err := s.GeminiClient.UploadFile(f, "", opts)
 	if err != nil {
 		return err
 	}

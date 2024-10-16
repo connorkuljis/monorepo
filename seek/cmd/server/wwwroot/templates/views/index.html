@@ -2,7 +2,7 @@
 <section>
   <h2>Generate Cover Letter</h2>
   <!-- Generate Form -->
-  <form hx-post="/generate">
+  <form action="/generate" method="post">
     <fieldset>
       <label for="place">Place where you found the job*</label>
       <input type="text" name="place" id="place" value="{{ .Place }}" />

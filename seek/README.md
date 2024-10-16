@@ -1,5 +1,14 @@
 # Seek: AI-Powered Cover Letter Generator
 
+## Build
+
+`just gotenberg` - starts a docker container required for pdf generation
+
+`just local` - run the program
+
+`just deploy` - deploys to cloud run service by building and pushing latest docker image
+
+
 ## Overview
 
 Seek is a web-based application designed to automate the process of cover letter generation using advanced artificial intelligence technology. It leverages Google's Gemini AI model to produce customized cover letters for job applications.
@@ -13,12 +22,6 @@ Seek is a web-based application designed to automate the process of cover letter
   - Automatic scaling based on demand
   - Pay-per-use pricing model
 
-
-## Build
-
-`just local` - builds server
-
-`just deploy` - deploys to cloud run service by building and pushing latest docker image
 
 
 ## Dependencies 
