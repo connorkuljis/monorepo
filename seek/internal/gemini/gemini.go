@@ -21,6 +21,7 @@ func NewClient(ctx *context.Context, apiKey string, logger *slog.Logger) (*Gemin
 	if err != nil {
 		return nil, err
 	}
+	logger.Info("Created Gemini Client")
 
 	return &GeminiClient{
 		Client: client,

@@ -36,5 +36,6 @@ func main() {
 
 	server.Middleware()
 	server.Routes()
-	server.Start()
+
+	log.Fatal(server.Start())
 }
