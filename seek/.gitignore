@@ -1,6 +1,2 @@
-/server
-/cli
-/static/
-
-out/
-./db/
+/db/
+/out/
