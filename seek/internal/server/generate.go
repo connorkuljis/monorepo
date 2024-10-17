@@ -2,7 +2,9 @@ package server
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/connorkuljis/seek-js/internal/gemini"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
@@ -12,111 +14,71 @@ func (h *Server) GeneratePageGet(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	uri, ok1 := sess.Values["uri"].(string)
-	filename, ok2 := sess.Values["filename"].(string)
+	_, ok1 := sess.Values["uri"].(string)
+	_, ok2 := sess.Values["filename"].(string)
 
 	if !ok1 || !ok2 {
 		c.Redirect(http.StatusSeeOther, "/upload")
 	}
 
-	data := map[string]any{
-		"URI":      uri,
-		"Filename": filename,
-	}
-
-	return c.Render(http.StatusOK, "index.html", data)
+	return c.Render(http.StatusOK, "index.html", nil)
 }
 
-func (h *Server) GeneratePagePost(c echo.Context) error {
-	// 	type Form struct {
-	// 		place       string
-	// 		email       string
-	// 		phone       string
-	// 		description string
-	// 		targetModel string
-	// 	}
+type Form struct {
+	place       string
+	email       string
+	phone       string
+	description string
+	targetModel string
+}
 
-	// 	validate := func(form Form) error {
-	// 		if form.description == "" || form.place == "" || form.email == "" || form.phone == "" {
-	// 			return echo.NewHTTPError(http.StatusBadRequest, "Missing form value")
-	// 		}
+func (form *Form) Validate() error {
+	if form.description == "" || form.place == "" || form.email == "" || form.phone == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing form value")
+	}
 
-	// 		if form.targetModel != "gemini-1.5-flash" && form.targetModel != "gemini-1.5-pro" {
-	// 			return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
-	// 		}
-	// 		return nil
-	// 	}
+	if form.targetModel != "gemini-1.5-flash" && form.targetModel != "gemini-1.5-pro" {
+		return echo.NewHTTPError(http.StatusBadRequest, "unsupported model")
+	}
 
-	// 	// 1. Validating user-session and form values
-	// 	sess, err := session.Get("session", c)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	return nil
+}
 
-	// 	uri, ok := sess.Values["uri"].(string)
-	// 	if !ok {
-	// 		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
-	// 	}
+func (s *Server) GeneratePagePost(c echo.Context) error {
+	// 1. Validating user-session and form values
+	sess, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
 
-	// 	filename, ok := sess.Values["filename"].(string)
-	// 	if !ok {
-	// 		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a filename")
-	// 	}
+	uri, ok := sess.Values["uri"].(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide a uri")
+	}
 
-	// 	form := Form{
-	// 		place:       c.FormValue("place"),
-	// 		email:       c.FormValue("email"),
-	// 		phone:       c.FormValue("phone"),
-	// 		description: c.FormValue("description"),
-	// 		targetModel: c.FormValue("model"),
-	// 	}
+	form := Form{
+		place:       c.FormValue("place"),
+		email:       c.FormValue("email"),
+		phone:       c.FormValue("phone"),
+		description: c.FormValue("description"),
+		targetModel: c.FormValue("model"),
+	}
 
-	// 	err = validate(form)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	err = form.Validate()
+	if err != nil {
+		return err
+	}
 
-	// 	// 2. generating the cover letter json response
-	// 	parts := []genai.Part{
-	// 		genai.Text(cv.Prompt),
-	// 		genai.Text("Place where I found the job description: " + form.place),
-	// 		genai.Text(form.description),
-	// 		genai.FileData{URI: uri},
-	// 	}
+	newCoverLetter := gemini.NewCoverLetter(uri, "index.html", form.email, form.phone, form.description, form.place, time.Now())
+	err = newCoverLetter.Generate(s.GeminiClient, form.targetModel)
+	if err != nil {
+		return err
+	}
 
-	// 	m := h.GeminiService.Client.GenerativeModel(form.targetModel)
-
-	// 	m.GenerationConfig = genai.GenerationConfig{
-	// 		ResponseMIMEType: "application/json",
-	// 	}
-
-	// 	resp, err := h.GeminiService.GenerateContent(parts, form.targetModel)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	coverLetter, err := cv.NewCoverLetterFromJSON(filename, gemini.ToString(resp))
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	coverLetter.Email = form.email
-	// 	coverLetter.Phone = form.phone
-
-	// 	data := map[string]any{
-	// 		"CoverLetter": coverLetter,
-	// 	}
-
-	// 	// 3. rendering and saving cover letter as html
-	// 	// render and save a seperate html file for printing as pdf
-	// 	var buf bytes.Buffer
-	// 	if err := c.Echo().Renderer.Render(&buf, "cover-letter-print.html", data, c); err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := coverLetter.SaveAsHTML(buf.Bytes()); err != nil {
-	// 		return err
-	// 	}
+	// b, err := newCoverLetter.Render(c)
+	// if err != nil {
+	// 	return err
+	// }
 
 	// 	// 4.  Opening the rendered cover letter to send to gotenburg to format as pdf
 	// 	// NOTE: this is a hack as goteberg does not allow a converting html bytes directly to pdf as it must be a form file in the header.
@@ -174,5 +136,5 @@ func (h *Server) GeneratePagePost(c echo.Context) error {
 	// 		return err
 	// 	}
 
-	return nil
+	return c.Render(http.StatusOK, "cover-letter.html", map[string]any{"CoverLetter": newCoverLetter})
 }
