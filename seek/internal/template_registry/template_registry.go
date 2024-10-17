@@ -100,6 +100,16 @@ func getDefinedViews(templateDir string) []View {
 			View: filepath.Join(templateDir, "views/upload-confirm.html"),
 		},
 		View{
+			Name: "login.html",
+			Base: base,
+			View: filepath.Join(templateDir, "views/login.html"),
+		},
+		View{
+			Name: "account.html",
+			Base: base,
+			View: filepath.Join(templateDir, "views/account.html"),
+		},
+		View{
 			Name: "cover-letter.html",
 			Base: base,
 			View: filepath.Join(templateDir, "views/cover-letter.html"),

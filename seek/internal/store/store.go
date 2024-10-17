@@ -1,5 +1,5 @@
 // Package db handles database connections and initialization
-package db
+package store
 
 import (
 	"fmt"
@@ -72,19 +72,14 @@ func (db *DB) InitSchema() error {
 	schema := `
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        email TEXT NOT NULL UNIQUE
     );
 
     CREATE TABLE IF NOT EXISTS resumes (
         id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL,
         title TEXT NOT NULL,
-        content TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        filename TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
     );
     

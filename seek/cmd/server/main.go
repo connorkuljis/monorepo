@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/connorkuljis/seek-js/internal/db"
 	"github.com/connorkuljis/seek-js/internal/gemini"
 	"github.com/connorkuljis/seek-js/internal/server"
+	"github.com/connorkuljis/seek-js/internal/store"
 )
 
 //go:embed wwwroot
@@ -36,7 +36,7 @@ func start() {
 		log.Fatal(err)
 	}
 
-	db, err := db.NewDB(db.Config{Name: "application.db", Directory: "db"})
+	db, err := store.NewDB(store.Config{Name: "application.db", Directory: "db"})
 	defer db.Close()
 
 	err = db.InitSchema()

@@ -1,12 +1,31 @@
 {{ define "header"}}
 <!-- Header -->
 <header class="container">
-  <nav>
+  <div class="banner">
     <hgroup>
       <a href="/"><h1>Seek</h1></a>
       <p>Make any cover letter with Gemini.</p>
     </hgroup>
-  </nav>
+    <nav class="links">
+      <a href="/generate">generate</a>
+      <a href="/login">login</a>
+      <a href="/account">account</a>
+    </nav>
+  </div>
+  <div>{{ . }}</div>
+  <style>
+    .banner {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .links {
+      display: flex;
+      gap: 0.25rem;
+    }
+  </style>
 </header>
 <!-- ./ Header -->
 {{ end }}

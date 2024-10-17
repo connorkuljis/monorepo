@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/connorkuljis/seek-js/internal/db"
 	"github.com/connorkuljis/seek-js/internal/gemini"
+	"github.com/connorkuljis/seek-js/internal/store"
 	tr "github.com/connorkuljis/seek-js/internal/template_registry"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -31,7 +31,7 @@ const (
 type Server struct {
 	Env                 *Env
 	Echo                *echo.Echo
-	DB                  *db.DB
+	DB                  *store.DB
 	Logger              *slog.Logger
 	GeminiClient        *gemini.GeminiClient
 	GotenbergServiceURL string
@@ -43,7 +43,7 @@ type Env struct {
 	GeminiAPIKey string
 }
 
-func NewServer(env *Env, wwwroot embed.FS, db *db.DB, logger *slog.Logger, geminiClient *gemini.GeminiClient) (*Server, error) {
+func NewServer(env *Env, wwwroot embed.FS, db *store.DB, logger *slog.Logger, geminiClient *gemini.GeminiClient) (*Server, error) {
 	server := &Server{
 		Env:                 env,
 		Echo:                echo.New(),
@@ -73,12 +73,19 @@ func (s *Server) Routes() error {
 	e := s.Echo
 	e.StaticFS("/", staticFS)
 	e.GET("/", func(c echo.Context) error {
-		return c.Redirect(http.StatusSeeOther, "/generate")
+		return c.Redirect(http.StatusSeeOther, "/login")
 	})
+
+	e.GET("/login", s.LoginHandler)
+	e.POST("/login", s.LoginPostHandler)
+
+	e.GET("/account", s.AccountHandler)
+
 	e.GET("/generate", s.GeneratePageGet)
 	e.POST("/generate", s.GeneratePagePost)
 	e.GET("/upload", s.UploadPageGet)
 	e.POST("/upload", s.UploadPagePost)
+
 	e.GET("/upload/confirm", s.ConfirmationPage)
 	e.GET("/api/pdf/:id", s.CoverLetterPDFGet)
 

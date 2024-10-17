@@ -1,4 +1,4 @@
-package db
+package store
 
 import (
 	"database/sql"
@@ -7,20 +7,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const Schema = `
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,  
-    password TEXT NOT NULL,
-    contact_number TEXT,
-    resume
-)
-`
-
 type User struct {
-	ID       int64  `db:"id"`
-	Email    string `db:"email"`
-	Password string `db:"password"`
+	ID    int64  `db:"id"`
+	Email string `db:"email"`
 }
 
 type UserRepository interface {
@@ -39,13 +28,24 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *User) error {
-	_, err := r.db.NamedExec("INSERT INTO users ( email,  password, contact_number ) VALUES ( :email,  :password, :contact_number )", user)
-	return err
+	result, err := r.db.NamedExec("INSERT INTO users ( email ) VALUES ( :email )", user)
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	user.ID = id
+
+	return nil
 }
 
 func (r *userRepository) GetByID(id int64) (*User, error) {
 	var user User
-	err := r.db.Get(&user, "SELECT * FROM users WHERE  id = ?", id)
+	err := r.db.Get(&user, "SELECT * FROM users WHERE id = ?", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("user not found")
@@ -56,7 +56,7 @@ func (r *userRepository) GetByID(id int64) (*User, error) {
 }
 
 func (r *userRepository) Update(user *User) error {
-	_, err := r.db.NamedExec("UPDATE users SET email = :email, password = :password, contact_number = :contact_number WHERE id = :id", user)
+	_, err := r.db.NamedExec("UPDATE users SET email = :email WHERE id = :id", user)
 	return err
 }
 
