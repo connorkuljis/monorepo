@@ -115,11 +115,13 @@ Under no circumstance should your responses include any placeholders. It is gett
 
 // Generate content using the prompt.
 func (cv *CoverLetter) Generate(gemini *GeminiClient, modelName string) error {
+	// TODO: check the resumeURI is valid / exists.
+
 	parts := []genai.Part{
 		genai.Text(cv.Prompt),
 		genai.Text("Place where I found the job description: " + cv.ListingOrigin),
 		genai.Text(cv.ListingDescription),
-		// genai.FileData{URI: uri},
+		genai.FileData{URI: cv.ResumeURI},
 	}
 
 	genaiModel := gemini.Client.GenerativeModel(modelName)
@@ -148,7 +150,7 @@ func (cv *CoverLetter) Generate(gemini *GeminiClient, modelName string) error {
 	return nil
 }
 
-func (cv *CoverLetter) Render(c echo.Context) ([]byte, error) {
+func (cv *CoverLetter) RenderHTML(c echo.Context) ([]byte, error) {
 	data := map[string]any{
 		"CoverLetter": cv,
 	}
