@@ -2,5 +2,11 @@
 <body>
   {{ template "header" . }}
   <main class="container">{{ template "view" . }}</main>
+  <style>
+    .container {
+      max-width: 42rem;
+      margin: 0 auto;
+    }
+  </style>
 </body>
 {{ end }}

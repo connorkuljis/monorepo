@@ -14,28 +14,33 @@ import (
 //go:embed wwwroot
 var wwwroot embed.FS
 
-// TODO: create and handle env var for the pdf generation url, also need to deploy to gcr.
 func main() {
+	start()
+}
+
+func start() {
+	// Logging
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+	// Environment variables
 	env, err := server.LoadEnvVars()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Add gemini client for gen ai
 	ctx := context.Background()
 	gc, err := gemini.NewClient(&ctx, env.GeminiAPIKey, logger)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Create and start the server
 	server, err := server.NewServer(env, wwwroot, logger, gc)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	server.Middleware()
 	server.Routes()
-
 	log.Fatal(server.Start())
 }

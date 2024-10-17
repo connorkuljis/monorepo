@@ -1,9 +1,22 @@
 {{ define "view" }}
 <section>
   <h2>Generate Cover Letter</h2>
+
   <!-- Generate Form -->
   <form action="/generate" method="post">
     <fieldset>
+      <legend>Chose a model</legend>
+      <div class="grid">
+        <label
+          ><input type="radio" name="model" value="gemini-1.5-flash" checked />
+          Gemini 1.5 Flash</label
+        >
+        <label
+          ><input type="radio" name="model" value="gemini-1.5-pro" /> Gemini 1.5
+          Pro</label
+        >
+      </div>
+
       <label for="place">Place where you found the job*</label>
       <input type="text" name="place" id="place" value="{{ .Place }}" />
 
@@ -16,18 +29,6 @@
       <label for="description">Job Description</label>
       <textarea id="description" name="description" rows="5" required>
       </textarea>
-
-      <legend>Chose a model</legend>
-      <div class="grid">
-        <label
-          ><input type="radio" name="model" value="gemini-1.5-flash" checked />
-          Gemini 1.5 Flash</label
-        >
-        <label
-          ><input type="radio" name="model" value="gemini-1.5-pro" /> Gemini 1.5
-          Pro</label
-        >
-      </div>
     </fieldset>
 
     <fieldset>
@@ -35,6 +36,14 @@
     </fieldset>
   </form>
   <!-- Generate Form -->
+
+  <style>
+    fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+  </style>
 
   <script>
     $(document).ready(function () {
