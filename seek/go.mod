@@ -7,8 +7,10 @@ toolchain go1.23.0
 require (
 	github.com/google/generative-ai-go v0.17.0
 	github.com/gorilla/sessions v1.4.0
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo/v4 v4.12.0
+	github.com/mattn/go-sqlite3 v1.14.22
 	google.golang.org/api v0.186.0
 )
 

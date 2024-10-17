@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/connorkuljis/seek-js/internal/db"
 	"github.com/connorkuljis/seek-js/internal/gemini"
 	"github.com/connorkuljis/seek-js/internal/server"
 )
@@ -35,8 +36,16 @@ func start() {
 		log.Fatal(err)
 	}
 
+	db, err := db.NewDB(db.Config{Name: "application.db", Directory: "db"})
+	defer db.Close()
+
+	err = db.InitSchema()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create and start the server
-	server, err := server.NewServer(env, wwwroot, logger, gc)
+	server, err := server.NewServer(env, wwwroot, db, logger, gc)
 	if err != nil {
 		log.Fatal(err)
 	}

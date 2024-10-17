@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/connorkuljis/seek-js/internal/db"
 	"github.com/connorkuljis/seek-js/internal/gemini"
 	tr "github.com/connorkuljis/seek-js/internal/template_registry"
 	"github.com/gorilla/sessions"
@@ -30,6 +31,7 @@ const (
 type Server struct {
 	Env                 *Env
 	Echo                *echo.Echo
+	DB                  *db.DB
 	Logger              *slog.Logger
 	GeminiClient        *gemini.GeminiClient
 	GotenbergServiceURL string
@@ -41,10 +43,11 @@ type Env struct {
 	GeminiAPIKey string
 }
 
-func NewServer(env *Env, wwwroot embed.FS, logger *slog.Logger, geminiClient *gemini.GeminiClient) (*Server, error) {
+func NewServer(env *Env, wwwroot embed.FS, db *db.DB, logger *slog.Logger, geminiClient *gemini.GeminiClient) (*Server, error) {
 	server := &Server{
 		Env:                 env,
 		Echo:                echo.New(),
+		DB:                  db,
 		Logger:              logger,
 		GeminiClient:        geminiClient,
 		GotenbergServiceURL: GotenbergURL,
