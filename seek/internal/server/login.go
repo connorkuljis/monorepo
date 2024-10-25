@@ -41,5 +41,5 @@ func (s *Server) LoginPostHandler(c echo.Context) error {
 		return err
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/")
+	return c.Redirect(http.StatusSeeOther, "/account")
 }

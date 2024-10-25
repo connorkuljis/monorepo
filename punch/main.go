@@ -49,14 +49,14 @@ func main() {
 	out := flag.Bool("out", false, "punch out")
 	flag.Parse()
 
-	timesheet, err := getTimesheet()
+	timesheet, err := LoadTimesheet()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if *in {
 		// guard to protect double login
-		lastCard, ok := timesheet.last()
+		lastCard, ok := timesheet.LastCard()
 		if ok && lastCard.mode == Login {
 			log.Fatal(errors.New("Please punch out before punching in."))
 		}
@@ -75,12 +75,12 @@ func main() {
 	}
 
 	if *out {
-		if timesheet.isEmpty() {
+		if timesheet.IsEmpty() {
 			log.Fatal("You have no cards on record.")
 		}
 
 		// guard to protect double log out
-		lastCard, ok := timesheet.last()
+		lastCard, ok := timesheet.LastCard()
 		if ok && lastCard.mode == Logout {
 			log.Fatal(errors.New("Please punch in before punching out."))
 		}
@@ -94,7 +94,7 @@ func main() {
 
 	// TODO: exec this as `-report` flag
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
-	pairs := timesheet.GetPairs()
+	pairs := timesheet.GetCardPairs()
 	for _, pair := range pairs {
 		if len(pair) == 2 {
 			duration := diff(pair[0], pair[1])
@@ -150,12 +150,12 @@ func (c *card) String() string {
 	return fmt.Sprintf("%s\t%d\t%s\t%s", c.id.String(), c.timestamp, c.description, mode)
 }
 
-func (t *timesheet) isEmpty() bool {
+func (t *timesheet) IsEmpty() bool {
 	return len(*t) == 0
 }
 
-func (t *timesheet) last() (card, bool) {
-	if t.isEmpty() {
+func (t *timesheet) LastCard() (card, bool) {
+	if t.IsEmpty() {
 		return card{}, false
 	}
 
@@ -163,13 +163,13 @@ func (t *timesheet) last() (card, bool) {
 	return timesheet[len(timesheet)-1], true
 }
 
-func (t *timesheet) Print() {
+func (t *timesheet) PrintCards() {
 	for i, c := range *t {
 		fmt.Println(i, c.String())
 	}
 }
 
-func (t *timesheet) GetPairs() [][]card {
+func (t *timesheet) GetCardPairs() [][]card {
 	timesheet := *t
 	var pairs [][]card
 	for i := 0; i < len(timesheet); i += 2 {
@@ -184,7 +184,7 @@ func (t *timesheet) GetPairs() [][]card {
 	return pairs
 }
 
-func getTimesheet() (timesheet, error) {
+func LoadTimesheet() (timesheet, error) {
 	file, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)

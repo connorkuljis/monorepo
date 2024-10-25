@@ -96,12 +96,20 @@ func (s *Server) Middleware() {
 	e := s.Echo
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte(SessionAuthKey))))
+	store := sessions.NewCookieStore([]byte(SessionAuthKey))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400, // 1 day
+		HttpOnly: true,
+		Secure:   false,
+		Domain:   "",
+	}
+	e.Use(session.Middleware(store))
 }
 
 func (s *Server) Start() error {
 	s.Logger.Info("Starting Server")
-	return s.Echo.Start(":" + s.Env.Port)
+	return s.Echo.Start("0.0.0.0:" + s.Env.Port)
 }
 
 func LoadEnvVars() (*Env, error) {
