@@ -13,6 +13,10 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
+const (
+	opts = blackfriday.CommonExtensions | blackfriday.AutoHeadingIDs
+)
+
 type BlogPage struct {
 	Slug    string
 	Content template.HTML
@@ -50,11 +54,10 @@ func ParsePage(r io.Reader) (*BlogPage, error) {
 	timestamp := page.Created.Format("2006-01-02")
 	slug := util.Slugify(timestamp+"-"+page.Title) + ".html"
 
-	// parse raw markdown content to html
-	contentHTML := template.HTML(blackfriday.Run(contentBytes))
+	contentHTML := blackfriday.Run(contentBytes, blackfriday.WithExtensions(opts))
 
 	page.Slug = slug
-	page.Content = contentHTML
+	page.Content = template.HTML(contentHTML)
 
 	return &page, nil
 }

@@ -1,0 +1,52 @@
+{{ define "layout" }}
+<body id="layout">
+  <!-- header -->
+  <div class="splash subgrid" grid-col="max" border="bottom" color="light">
+    <div grid-col="center">{{ template "header" . }}</div>
+  </div>
+
+  <!-- view -->
+  <div grid-col="center">{{ template "view" . }}</div>
+
+  <!-- toc -->
+  <section grid-col="right">{{ template "simple-toc" . }}</section>
+
+  <style></style>
+</body>
+{{ end }}
+
+<!-- toc -->
+{{ define "simple-toc" }}
+<details>
+  <summary>Table of Contents</summary>
+  <my-toc></my-toc>
+</details>
+
+<script>
+  class MyTOC extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this.render();
+    }
+
+    render() {
+      const sections = Array.from(document.querySelectorAll("h2[id]"));
+      const ul = document.createElement("ul");
+
+      sections.forEach((section) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = `#${section.id}`;
+        a.textContent = section.textContent;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+
+      this.shadowRoot.appendChild(ul);
+    }
+  }
+
+  customElements.define("my-toc", MyTOC);
+</script>
+{{ end }}

@@ -17,27 +17,36 @@ const (
 
 const (
 	root            = "templates/root.html"
-	layout          = "templates/layout.html"
 	head            = "templates/head.html"
-	componentHeader = "templates/components/header.html"
-	viewPost        = "templates/views/post.html"
+	layout          = "templates/layout.html"
+	layoutPost      = "templates/layouts/post.html"
 	viewIndex       = "templates/views/index.html"
+	viewPost        = "templates/views/post.html"
+	componentHeader = "templates/components/header.html"
 )
 
 const (
 	TimeFormat = time.RFC3339
 )
 
-func defaultRootTemplates() []string {
-	return []string{root, layout, head, componentHeader}
-}
-
 func HomePageTemplates() []string {
-	return append(defaultRootTemplates(), viewIndex)
+	return []string{
+		root,
+		head,
+		layout,
+		componentHeader,
+		viewIndex,
+	}
 }
 
 func BlogPageTemplates() []string {
-	return append(defaultRootTemplates(), viewPost)
+	return []string{
+		root,
+		head,
+		layoutPost,
+		componentHeader,
+		viewPost,
+	}
 }
 
 func Slugify(s string) string {
